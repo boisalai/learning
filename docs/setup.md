@@ -155,4 +155,12 @@ git remote add origin git@github.com:username/repository.git
 git push -u origin main
 ```
 
+Or simply push to an existing repository:
+
+```bash
+git add .
+git commit -m "initial commit"
+git push -u origin main
+```
+
 For more information, see [Getting Started with Python in VS Code](https://code.visualstudio.com/docs/python/python-tutorial).
