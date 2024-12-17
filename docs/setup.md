@@ -145,6 +145,13 @@ python -m pip install numpy pandas
 python -m pip freeze > requirements.txt
 ```
 
+## License
+
+```bash
+touch LICENSE
+curl https://www.apache.org/licenses/LICENSE-2.0.txt > LICENSE
+```
+
 ## Git Initial Commit and Remote Setup
 
 ```bash
