@@ -3,6 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <title>Calculateur Fiscal</title>
+    <style>
+        .align-right {
+            text-align: right;
+            padding-right: 5px; /* Ajoute un peu d'espace entre le texte et le bord droit */
+            width: 72px;
+        }
+    </style>
+
     <!-- Seul le script du modèle est nécessaire -->
     <script type="text/javascript" src="script/jquery.min.js"></script>
     <script type="text/javascript" src="script/revenu-disponible_dec2023.js"></script>
@@ -97,196 +105,282 @@
             recalc_typerevenu();
             recalc_NbEnfants(); 
         });
-
     </script>
 </head>
 <body>
-    <div class="span23">
-        <select name='Situation' id='Situation' class="selectDesign styleDesign largeurChamps" onchange="recalc_onclick('Situation');recalc_typerevenu();recalc_NbEnfants();">
-            <option  data-value="s:Personne vivant seule" selected >Personne vivant seule</option>
-                <option  data-value="s:Famille monoparentale" >Famille monoparentale</option>
-                <option  data-value="s:Couple" >Couple</option>
-                <option  data-value="s:Retraité vivant seul" >Retraité vivant seul</option>
-                <option  data-value="s:Couple de retraités" >Couple de retraités</option>
-        </select>
-    </div>
+    <h1>Calculateur Fiscal</h1>
+    <p>Version décembre 2023</p>
 
-    <!-- Autres paramètres -->
-    <input id="AgeAdulte1" type="number" min="18" max="99" value="35" onchange="recalc_onclick('AgeAdulte1');">
-    <input id="AgeAdulte2" type="number" min="0" max="99" value="35" onchange="recalc_onclick('AgeAdulte2');">
-    <input id="Revenu1" type="number" min="0" max="250000" value="50000" onchange="recalc_onclick('Revenu1');">
-    <input id="Revenu2" type="number" min="0" max="250000" value="0" onchange="recalc_onclick('Revenu2');">
-    <div class="enfants span23">
-        <select name='NbEnfants' id='NbEnfants' onchange="recalc_onclick('NbEnfants');recalc_NbEnfants();">
-            <option  data-value='s:0' selected >Aucun enfant</option>
-            <option  data-value='s:1' >Un enfant</option>
-            <option  data-value='s:2' >Deux enfants</option>
-            <option  data-value='s:3' >Trois enfants</option>
-            <option  data-value='s:4' >Quatre enfants</option>
-            <option  data-value='s:5' >Cinq enfants</option>
-        </select>
-    </div>		
+    <table>
+        <tr>
+            <td>Type de ménage</td>
+            <td><select name='Situation' id='Situation' class="selectDesign styleDesign largeurChamps" onchange="recalc_onclick('Situation');recalc_typerevenu();recalc_NbEnfants();">
+                <option  data-value="s:Personne vivant seule" selected >Personne vivant seule</option>
+                    <option  data-value="s:Famille monoparentale" >Famille monoparentale</option>
+                    <option  data-value="s:Couple" >Couple</option>
+                    <option  data-value="s:Retraité vivant seul" >Retraité vivant seul</option>
+                    <option  data-value="s:Couple de retraités" >Couple de retraités</option>
+            </select></td>
+        </tr>
+        <tr>
+            <td>Âge de l'adulte 1</td>
+            <td><input id="AgeAdulte1" type="number" min="18" max="99" value="35" onchange="recalc_onclick('AgeAdulte1');"></td>
+        </tr>
+        <tr>
+            <td>Revenu de l'adulte 1</td>
+            <td><input id="Revenu1" type="number" min="0" max="250000" value="50000" onchange="recalc_onclick('Revenu1');"></td>
+        </tr>
+        <tr>
+            <td>Âge de l'adulte 2</td>
+            <td><input id="AgeAdulte2" type="number" min="0" max="99" value="35" onchange="recalc_onclick('AgeAdulte2');"></td>
+        </tr>
+        <tr>
+            <td>Revenu de l'adulte 2</td>
+            <td><input id="Revenu2" type="number" min="0" max="250000" value="0" class="align-right" onchange="recalc_onclick('Revenu2');"></td>
+        </tr>
+        <tr>
+            <td>Nombre d'enfants</td>
+            <td>
+                <select name='NbEnfants' id='NbEnfants' onchange="recalc_onclick('NbEnfants');recalc_NbEnfants();">
+                    <option  data-value='s:0' selected >Aucun enfant</option>
+                    <option  data-value='s:1' >Un enfant</option>
+                    <option  data-value='s:2' >Deux enfants</option>
+                    <option  data-value='s:3' >Trois enfants</option>
+                    <option  data-value='s:4' >Quatre enfants</option>
+                    <option  data-value='s:5' >Cinq enfants</option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td>Âge de l'enfant 1</td>
+            <td><input id="AgeEnfant1" type="number" value="0" class="align-right" onchange="recalc_onclick('AgeEnfant1');"></td>
+            <td><input id='Frais1' type='number' value='0' onchange="recalc_onclick('Frais1')" name='Frais1'/></td>
+            <td>
+                <select name='type_garde1' id='type_garde1' onchange="recalc_onclick('type_garde1')">
+                    <option data-value='s:Subventionnée' selected >Subventionné</option>
+                    <option data-value='s:Non subventionnée' >Non subventionné</option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td>Âge de l'enfant 2</td>
+            <td><input id="AgeEnfant2" type="number" value="0" class="align-right" onchange="recalc_onclick('AgeEnfant2');"></td>
+            <td><input id='Frais2' type='number' value='0' onchange="recalc_onclick('Frais2')" name='Frais2'/></td>
+            <td>
+                <select name='type_garde2' id='type_garde2' onchange="recalc_onclick('type_garde2')">
+                    <option data-value='s:Subventionnée' selected >Subventionné</option>
+                    <option data-value='s:Non subventionnée' >Non subventionné</option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td>Âge de l'enfant 3</td>
+            <td><input id="AgeEnfant3" type="number" value="0" class="align-right" onchange="recalc_onclick('AgeEnfant3');"></td>
+            <td><input id='Frais3' type='number' value='0' onchange="recalc_onclick('Frais3')" name='Frais3'/></td>
+            <td>
+                <select name='type_garde3' id='type_garde3' onchange="recalc_onclick('type_garde3')">
+                    <option data-value='s:Subventionnée' selected >Subventionné</option>
+                    <option data-value='s:Non subventionnée' >Non subventionné</option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td>Âge de l'enfant 4</td>
+            <td><input id="AgeEnfant4" type="number" value="0" class="align-right" onchange="recalc_onclick('AgeEnfant4');"></td>
+            <td><input id='Frais4' type='number' value='0' onchange="recalc_onclick('Frais4')" name='Frais4'/></td>
+            <td>
+                <select name='type_garde4' id='type_garde4' onchange="recalc_onclick('type_garde4')">
+                    <option data-value='s:Subventionnée' selected >Subventionné</option>
+                    <option data-value='s:Non subventionnée' >Non subventionné</option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td>Âge de l'enfant 5</td>
+            <td><input id="AgeEnfant5" type="number" value="0" class="align-right" onchange="recalc_onclick('AgeEnfant5');"></td>
+            <td><input id='Frais5' type='number' value='0' onchange="recalc_onclick('Frais5')" name='Frais5'/></td>
+            <td>
+                <select name='type_garde5' id='type_garde5' onchange="recalc_onclick('type_garde5')">
+                    <option data-value='s:Subventionnée' selected >Subventionné</option>
+                    <option data-value='s:Non subventionnée' >Non subventionné</option>
+                </select>
+            </td>
+        </tr>
+    </table>
 
-    <input id='AgeEnfant1' type='number' value='0' onchange="recalc_onclick('AgeEnfant1')" name='AgeEnfant1'/>
-    <input id='Frais1' type='number' value='0' onchange="recalc_onclick('Frais1')" name='Frais1'/>
-    <select name='type_garde1' id='type_garde1' onchange="recalc_onclick('type_garde1')">
-        <option  data-value='s:Subventionnée' selected >Subventionné</option>
-        <option  data-value='s:Non subventionnée' >Non subventionné</option>
-    </select>
-    
-    <input id='AgeEnfant2' type='number' value='0' onchange="recalc_onclick('AgeEnfant2')" name='AgeEnfant2'/>
-    <input id='Frais2' type='number' value='0' onchange="recalc_onclick('Frais2')" name='Frais2'/>
-    <select name='type_garde2' id='type_garde2' onchange="recalc_onclick('type_garde2')">
-        <option  data-value='s:Subventionnée' selected >Subventionné</option>
-        <option  data-value='s:Non subventionnée' >Non subventionné</option>
-    </select>
-    
-    <input id='AgeEnfant3' type='number' value='0' onchange="recalc_onclick('AgeEnfant3')" name='AgeEnfant3'/>
-    <input id='Frais3' type='number' value='0' onchange="recalc_onclick('Frais3')" name='Frais3'/>
-    <select name='type_garde3' id='type_garde3' onchange="recalc_onclick('type_garde3')">
-        <option  data-value='s:Subventionnée' selected >Subventionné</option>
-        <option  data-value='s:Non subventionnée' >Non subventionné</option>
-    </select>
-    
-    <input id='AgeEnfant4' type='number' value='0' onchange="recalc_onclick('AgeEnfant4')" name='AgeEnfant4'/>
-    <input id='Frais4' type='number' value='0' onchange="recalc_onclick('Frais4')" name='Frais4'/>
-    <select name='type_garde4' id='type_garde4' onchange="recalc_onclick('type_garde4')">
-        <option  data-value='s:Subventionnée' selected >Subventionné</option>
-        <option  data-value='s:Non subventionnée' >Non subventionné</option>
-    </select>
-    
-    <input id='AgeEnfant5' type='number' value='0' onchange="recalc_onclick('AgeEnfant5')" name='AgeEnfant5'/>
-    <input id='Frais5' type='number' value='0' onchange="recalc_onclick('Frais5')" name='Frais5'/>
-    <select name='type_garde5' id='type_garde5' onchange="recalc_onclick('type_garde5')">
-        <option  data-value='s:Subventionnée' selected >Subventionné</option>
-        <option  data-value='s:Non subventionnée' >Non subventionné</option>
-    </select>
 
-    <!-- Champs de résultats avec tous les IDs alignés avec mfq.html -->
-    <input type="text" id="RB_old" readonly="readonly" value="0">
-    <input type="text" id="RB_new" readonly="readonly" value="0">
-    <input type="text" id="RB_ecart" readonly="readonly" value="0">
-
-    <!-- Résultats -->
-    <!-- Revenus bruts et disponibles -->
-    <input type="text" id="RB_ecart" value="0">
-    <input type="text" id="RB_old" value="0">
-    <input type="text" id="RB_new" value="0">
-    
-    <input type="text" id="RD_ecart" value="0">
-    <input type="text" id="RD_old" value="0">
-    <input type="text" id="RD_new" value="0">
-
-    <!-- Québec -->
-    <input type="text" id="QC_impot_st_ecart" value="0">
-    <input type="text" id="QC_impot_st_old" value="0">
-    <input type="text" id="QC_impot_st_new" value="0">
-
-    <input type="text" id="QC_impot_ecart" value="0">
-    <input type="text" id="QC_impot_old" value="0">
-    <input type="text" id="QC_impot_new" value="0">
-
-    <input type="text" id="QC_impot_bonif_ecart" value="0">
-    <input type="text" id="QC_impot_bonif_old" value="0">
-    <input type="text" id="QC_imppot_bonif_new" value="0">
-
-    <input type="text" id="QC_adr_ecart" value="0">
-    <input type="text" id="QC_adr_old" value="0">
-    <input type="text" id="QC_adr_new" value="0">
-
-    <input type="text" id="QC_sae_ecart" value="0">
-    <input type="text" id="QC_sae_old" value="0">
-    <input type="text" id="QC_sae_new" value="0">
-
-    <input type="text" id="SFS_ecart" value="0">
-    <input type="text" id="SFS_old" value="0">
-    <input type="text" id="SFS_new" value="0">
-
-    <input type="text" id="QC_pt_ecart" value="0">
-    <input type="text" id="QC_pt_old" value="0">
-    <input type="text" id="QC_pt_new" value="0">
-
-    <input type="text" id="QC_sol_ecart" value="0">
-    <input type="text" id="QC_sol_old" value="0">
-    <input type="text" id="QC_sol_new" value="0">
-
-    <input type="text" id="QC_garde_ecart" value="0">
-    <input type="text" id="QC_garde_old" value="0">
-    <input type="text" id="QC_garde_new" value="0">
-
-    <input type="text" id="QC_al_ecart" value="0">
-    <input type="text" id="QC_al_old" value="0">
-    <input type="text" id="QC_al_new" value="0">
-
-    <input type="text" id="QC_medic_ecart" value="0">
-    <input type="text" id="QC_medic_old" value="0">
-    <input type="text" id="QC_medic_new" value="0">
-
-    <input type="text" id="QC_aines_ecart" value="0">
-    <input type="text" id="QC_aines_old" value="0">
-    <input type="text" id="QC_aines_new" value="0">
-
-    <input type="text" id="QC_total_ecart" value="0">
-    <input type="text" id="QC_total_old" value="0">
-    <input type="text" id="QC_total_new" value="0">
-
-    <!-- Canada -->
-    <input type="text" id="CA_impot_ecart" value="0">
-    <input type="text" id="CA_impot_old" value="0">
-    <input type="text" id="CA_impot_new" value="0">
-
-    <input type="text" id="CA_ace_ecart" value="0">
-    <input type="text" id="CA_ace_old" value="0">
-    <input type="text" id="CA_ace_new" value="0">
-
-    <input type="text" id="CA_tps_ecart" value="0">
-    <input type="text" id="CA_tps_old" value="0">
-    <input type="text" id="CA_tps_new" value="0">
-
-    <input type="text" id="CA_pfrt_ecart" value="0">
-    <input type="text" id="CA_pfrt_old" value="0">
-    <input type="text" id="CA_pfrt_new" value="0">
-
-    <input type="text" id="CA_psv_ecart" value="0">
-    <input type="text" id="CA_psv_old" value="0">
-    <input type="text" id="CA_psv_new" value="0">
-
-    <input type="text" id="CA_medic_ecart" value="0">
-    <input type="text" id="CA_medic_old" value="0">
-    <input type="text" id="CA_medic_new" value="0">
-
-    <input type="text" id="CA_total_ecart" value="0">
-    <input type="text" id="CA_total_old" value="0">
-    <input type="text" id="CA_total_new" value="0">
-
-    <!-- Cotisations -->
-    <input type="text" id="CA_ae_ecart" value="0">
-    <input type="text" id="CA_ae_old" value="0">
-    <input type="text" id="CA_ae_new" value="0">
-
-    <input type="text" id="QC_rqap_ecart" value="0">
-    <input type="text" id="QC_rqap_old" value="0">
-    <input type="text" id="QC_rqap_new" value="0">
-
-    <input type="text" id="CA_rrq_ecart" value="0">
-    <input type="text" id="CA_rrq_old" value="0">
-    <input type="text" id="CA_rrq_new" value="0">
-
-    <input type="text" id="QC_fss_ecart" value="0">
-    <input type="text" id="QC_fss_old" value="0">
-    <input type="text" id="QC_fss_new" value="0">
-
-    <input type="text" id="QC_ramq_ecart" value="0">
-    <input type="text" id="QC_ramq_old" value="0">
-    <input type="text" id="QC_ramq_new" value="0">
-
-    <input type="text" id="Cotisation_ecart" value="0">
-    <input type="text" id="Cotisation_old" value="0">
-    <input type="text" id="Cotisation_new" value="0">
-
-    <input type="text" id="Frais_garde_ecart" value="0">
-    <input type="text" id="Frais_garde_old" value="0">
-    <input type="text" id="Frais_garde_new" value="0">
+    <table>
+        <tr>
+            <td>Revenu disponible...</td>
+            <td><input type="text" id="RD_old" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="RD_new" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="RD_ecart" readonly="readonly" value="0" class="align-right"></td>
+        </tr>
+        <tr>
+            <td>Régime fiscal du Québec</td>
+            <td><input type="text" id="QC_total_old" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="QC_total_new" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="QC_total_ecart" readonly="readonly" value="0" class="align-right"></td>
+        </tr>
+        <tr>
+            <td>Impôt total du Québec</td>
+            <td><input type="text" id="QC_impot_st_old" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="QC_impot_st_new" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="QC_impot_st_ecart" readonly="readonly" value="0" class="align-right"></td>
+        </tr>
+        <tr>
+            <td>Impôt avant la baisse d'impôt</td>
+            <td><input type="text" id="QC_impot_old" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="QC_impot_new" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="QC_impot_ecart" readonly="readonly" value="0" class="align-right"></td>
+        </tr>
+        <tr>
+            <td>Baisse d'impôt</td>
+            <td><input type="text" id="QC_impot_bonif_old" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="QC_imppot_bonif_new" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="QC_impot_bonif_ecart" readonly="readonly" value="0" class="align-right"></td>
+        </tr>
+        <tr>
+            <td>Aide sociale</td>
+            <td><input type="text" id="QC_adr_old" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="QC_adr_new" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="QC_adr_ecart" readonly="readonly" value="0" class="align-right"></td>
+        </tr>
+        <tr>
+            <td>Allocation famille</td>
+            <td><input type="text" id="QC_sae_old" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="QC_sae_new" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="QC_sae_ecart" readonly="readonly" value="0" class="align-right"></td>
+        </tr>
+        <tr>
+            <td>Supplément pour l'achat de fournitures scolaires</td>
+            <td><input type="text" id="SFS_old" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="SFS_new" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="SFS_ecart" readonly="readonly" value="0" class="align-right"></td>
+        </tr>
+        <tr>
+            <td>Prime au travail</td>
+            <td><input type="text" id="QC_pt_old" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="QC_pt_new" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="QC_pt_ecart" readonly="readonly" value="0" class="align-right"></td>
+        </tr>
+        <tr>
+            <td>Crédit pour la solidarité</td>
+            <td><input type="text" id="QC_sol_old" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="QC_sol_new" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="QC_sol_ecart" readonly="readonly" value="0" class="align-right"></td>
+        </tr>
+        <tr>
+            <td>Crédit d'impôt pour frais de garde d'enfants</td>
+            <td><input type="text" id="QC_garde_old" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="QC_garde_new" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="QC_garde_ecart" readonly="readonly" value="0" class="align-right"></td>
+        </tr>
+        <tr>
+            <td>Allocation-logement</td>
+            <td><input type="text" id="QC_al_old" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="QC_al_new" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="QC_al_ecart" readonly="readonly" value="0" class="align-right"></td>
+        </tr>
+        <tr>
+            <td>Crédit d'impôt remboursable pour frais médicaux</td>
+            <td><input type="text" id="QC_medic_old" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="QC_medic_new" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="QC_medic_ecart" readonly="readonly" value="0" class="align-right"></td>
+        </tr>
+        <tr>
+            <td>Montant pour le soutien des aînés</td>
+            <td><input type="text" id="QC_aines_old" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="QC_aines_new" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="QC_aines_ecart" readonly="readonly" value="0" class="align-right"></td>
+        </tr>
+        
+        <tr>
+            <td>Régime fiscal du Canada</td>
+            <td><input type="text" id="CA_total_old" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="CA_total_new" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="CA_total_ecart" readonly="readonly" value="0" class="align-right"></td>
+        </tr>
+        <tr>
+            <td>Impôt fédéral</td>
+            <td><input type="text" id="CA_impot_old" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="CA_impot_new" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="CA_impot_ecart" readonly="readonly" value="0" class="align-right"></td>
+        </tr>
+        <tr>
+            <td>Allocation canadienne pour enfants</td>
+            <td><input type="text" id="CA_ace_old" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="CA_ace_new" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="CA_ace_ecart" readonly="readonly" value="0" class="align-right"></td>
+        </tr>
+        <tr>
+            <td>Crédit TPS</td>
+            <td><input type="text" id="CA_tps_old" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="CA_tps_new" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="CA_tps_ecart" readonly="readonly" value="0" class="align-right"></td>
+        </tr>
+        <tr>
+            <td>Allocation canadienne pour les travailleurs</td>
+            <td><input type="text" id="CA_pfrt_old" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="CA_pfrt_new" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="CA_pfrt_ecart" readonly="readonly" value="0" class="align-right"></td>
+        </tr>
+        <tr>
+            <td>Pension de la Sécurité de la vieillesse</td>
+            <td><input type="text" id="CA_psv_old" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="CA_psv_new" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="CA_psv_ecart" readonly="readonly" value="0" class="align-right"></td>
+        </tr>
+        <tr>
+            <td>Supplément remboursable pour frais médicaux</td>
+            <td><input type="text" id="CA_medic_old" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="CA_medic_new" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="CA_medic_ecart" readonly="readonly" value="0" class="align-right"></td>
+        </tr>
+        
+        <tr>
+            <td>Cotisations</td>
+            <td><input type="text" id="Cotisation_old" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="Cotisation_new" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="Cotisation_ecart" readonly="readonly" value="0" class="align-right"></td>
+        </tr>
+        <tr>
+            <td>Assurance-emploi</td>
+            <td><input type="text" id="CA_ae_old" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="CA_ae_new" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="CA_ae_ecart" readonly="readonly" value="0" class="align-right"></td>
+        </tr>
+        <tr>
+            <td>Régime québécois d'assurance parentale</td>
+            <td><input type="text" id="QC_rqap_old" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="QC_rqap_new" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="QC_rqap_ecart" readonly="readonly" value="0" class="align-right"></td>
+        </tr>
+        <tr>
+            <td>Régime de rentes du Québec</td>
+            <td><input type="text" id="CA_rrq_old" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="CA_rrq_new" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="CA_rrq_ecart" readonly="readonly" value="0" class="align-right"></td>
+        </tr>
+        <tr>
+            <td>Fonds des services de santé</td>
+            <td><input type="text" id="QC_fss_old" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="QC_fss_new" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="QC_fss_ecart" readonly="readonly" value="0" class="align-right"></td>
+        </tr>
+        <tr>
+            <td>Régime d'assurance médicaments du Québec</td>
+            <td><input type="text" id="QC_ramq_old" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="QC_ramq_new" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="QC_ramq_ecart" readonly="readonly" value="0" class="align-right"></td>
+        </tr>
+        <tr>
+            <td>Frais de garde</td>
+            <td><input type="text" id="Frais_garde_old" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="Frais_garde_new" readonly="readonly" value="0" class="align-right"></td>
+            <td><input type="text" id="Frais_garde_ecart" readonly="readonly" value="0" class="align-right"></td>
+        </tr>
+    </table>
 
 </body>
 </html>
