@@ -47,14 +47,18 @@ class EmploymentInsurance(TaxProgram):
         params = self.PARAMS[family.tax_year]
 
         def calculate_premium(income: float) -> float:
-            if income < params['min_insurable_earnings']:
+            if income <= params['min_insurable_earnings']:
                 return 0
+
             insurable_earnings = min(income, params['max_insurable_earnings'])
             return min(insurable_earnings * params['employee_rate'], params['max_employee_contribution'])
 
-        premium1 = -1 * calculate_premium(family.adult1.gross_work_income)
-        premium2 = -1 * calculate_premium(family.adult2.gross_work_income) if family.adult2 else 0
+        premium1 = calculate_premium(family.adult1.gross_work_income)
+        premium2 = calculate_premium(family.adult2.gross_work_income) if family.adult2 else 0
 
+        premium1 = -1 * round(premium1, 2)
+        premium2 = -1 * round(premium2, 2)
+        
         return {
             'program': self.name,
             'tax_year': family.tax_year,
@@ -78,7 +82,7 @@ def chart():
     for income in incomes:
         adult = AdultInfo(age=30, gross_work_income=income)
         test_case = {
-            "status": FamilyStatus.SINGLE,
+            "family_status": FamilyStatus.SINGLE,
             "adult1": adult,
             "tax_year": 2024
         }

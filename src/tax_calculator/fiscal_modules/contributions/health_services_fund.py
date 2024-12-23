@@ -6,7 +6,16 @@ class HealthServicesFund(TaxProgram):
     """Quebec Health Services Fund (FSS) calculator"""
     
     PARAMS = {
+        2025: {
+            # See https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/finances/publications-adm/parametres/AUTFR_RegimeImpot2025.pdf
+            'first_threshold': 18130.0,
+            'second_threshold': 63060.0,
+            'rate': 0.01,
+            'base_contribution': 150.0,
+            'max_contribution': 1000.0
+        },
         2024: {
+            # See https://www.rcgt.com/fr/planiguide/modules/module-12-programmes-et-charges-sociales/fonds-des-services-de-sante-quebec/
             'first_threshold': 17630.0,
             'second_threshold': 61315.0,
             'rate': 0.01,
@@ -36,7 +45,7 @@ class HealthServicesFund(TaxProgram):
         params = self.PARAMS[family.tax_year]
 
         def calculate_contribution(adult: AdultInfo) -> float:
-            if not adult.is_retired or adult.age < 65:
+            if not adult.is_retired:
                 return 0.0
 
             total_income = adult.gross_retirement_income + adult.self_employed_income
@@ -54,12 +63,15 @@ class HealthServicesFund(TaxProgram):
         contribution1 = calculate_contribution(family.adult1)
         contribution2 = calculate_contribution(family.adult2) if family.adult2 else 0.0
 
+        contribution1 = -1 * round(contribution1, 2)
+        contribution2 = -1 * round(contribution2, 2)
+
         return {
             'program': self.name,
             'tax_year': family.tax_year,
-            'adult1': round(contribution1, 2),
-            'adult2': round(contribution2, 2),
-            'total': round(contribution1 + contribution2, 2)
+            'adult1': contribution1,
+            'adult2': contribution2,
+            'total': contribution1 + contribution2
         }
 
 def chart():
@@ -75,7 +87,7 @@ def chart():
     for income in incomes:
         adult = AdultInfo(age=65, gross_retirement_income=income, is_retired=True)
         test_case = {
-            "status": FamilyStatus.SINGLE,
+            "family_status": FamilyStatus.SINGLE,
             "adult1": adult,
             "tax_year": 2024
         }

@@ -12,6 +12,14 @@ class ParentalInsurance(TaxProgram):
     """Quebec Parental Insurance Plan calculator"""
     
     PARAMS = {
+        2025: {
+            # See https://www.rqap.gouv.qc.ca/fr/employeur/cotisations-et-revenu-maximal-assurable
+            'max_insurable_earnings': 98000.0,
+            'employee_rate': 0.00494,
+            'employer_rate': 0.00692,
+            'self_employed_rate': 0.00878,
+            'min_earnings': 2000,
+        },
         2024: {
             'max_insurable_earnings': 94000.0,
             'employee_rate': 0.00494,
@@ -41,16 +49,19 @@ class ParentalInsurance(TaxProgram):
         self.validate_year(family.tax_year)
         params = self.PARAMS[family.tax_year]
 
-        def calculate_premium(gross_work_income: float) -> float:
-            if gross_work_income < params['min_earnings']:
-                insurable_earnings = min(gross_work_income, params['max_insurable_earnings'])
-                employee_premium = insurable_earnings * params['employee_rate']
-            else:
-                employee_premium = 0
+        def calculate_premium(income: float) -> float:
+            if income <= params['min_earnings']:
+                return 0
+                
+            insurable_earnings = min(income, params['max_insurable_earnings'])
+            employee_premium = insurable_earnings * params['employee_rate']
             return employee_premium 
 
         premium1 = calculate_premium(family.adult1.gross_work_income)
         premium2 = (calculate_premium(family.adult2.gross_work_income) if family.adult2 else 0)
+
+        premium1 = -1 * round(premium1, 2)
+        premium2 = -1 * round(premium2, 2)
 
         return {
             'program': self.name,
@@ -73,7 +84,7 @@ if __name__ == "__main__":
     for income in incomes:
         adult = AdultInfo(age=30, gross_work_income=income)
         test_case = {
-            "status": FamilyStatus.SINGLE,
+            "family_status": FamilyStatus.SINGLE,
             "adult1": adult,
             "tax_year": 2024
         }

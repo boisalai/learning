@@ -1,15 +1,15 @@
 """
-Social Assistance Program
+Senior Assistance Amount
 
-Parameters:
-    - https://www.quebec.ca/famille-et-soutien-aux-personnes/aide-sociale-et-solidarite-sociale/information-aide-financiere/montants-prestations-aide-sociale
+Parameters
+    https://cffp.recherche.usherbrooke.ca/outils-ressources/guide-mesures-fiscales/allocation-famille/#:~:text=Le%20seuil%20du%20revenu%20familial,de%20r%C3%A9duction%20est%20de%204%20%25.
 """
 
 from typing import Dict, List, Any
 from tax_calculator.core import TaxProgram, Family, FamilyStatus, AdultInfo
 
 
-class SocialAssistance(TaxProgram):
+class SeniorAssistanceAmount(TaxProgram):
     PARAMS = {
         2025: {
             '?': 65700.0,
@@ -24,7 +24,7 @@ class SocialAssistance(TaxProgram):
 
     @property
     def name(self) -> str:
-        return "Employment Insurance"
+        return "Senior Assistance Amount"
 
     @property
     def supported_years(self) -> List[int]:
@@ -45,14 +45,4 @@ class SocialAssistance(TaxProgram):
             'total': benefit1 + benefit2,
         }
 
-if __name__ == "__main__":
-    social_assistance = SocialAssistance()
-    sa = social_assistance.calculate(Family(
-        tax_year=2024,
-        family_status=FamilyStatus.SINGLE,
-        adult1=AdultInfo(age=30, gross_work_income=0.0),
-        adult2=None,
-        children=[]
-    ))
 
-    print(sa)

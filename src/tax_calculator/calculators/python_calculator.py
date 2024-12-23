@@ -3,21 +3,73 @@ Python implementation of the tax calculator.
 Implements all tax calculations in Python based on Quebec and Canada tax rules.
 """
 
-from typing import Dict
-from tax_calculator.core import BaseTaxCalculator, Family
-from tax_calculator.fiscal_modules.contributions.employment_insurance import EmploymentInsurance
-from tax_calculator.fiscal_modules.contributions.parental_insurance import ParentalInsurance
+from typing import Dict, List
+from tax_calculator.core import (
+    BaseTaxCalculator,
+    FamilyStatus,
+    AdultInfo,
+    ChildInfo,
+    DaycareType,
+    Family
+)
 
-class PythonTaxCalculator(BaseTaxCalculator):    
+from tax_calculator.fiscal_modules.quebec.quebec_income_tax import QuebecIncomeTax
+from tax_calculator.fiscal_modules.quebec.social_assistance import SocialAssistance
+from tax_calculator.fiscal_modules.quebec.childcare_expenses_credit import ChildcareExpensesCredit
+
+from tax_calculator.fiscal_modules.contributions.employment_insurance import EmploymentInsurance
+from tax_calculator.fiscal_modules.contributions.health_services_fund import HealthServicesFund
+from tax_calculator.fiscal_modules.contributions.parental_insurance import ParentalInsurance
+from tax_calculator.fiscal_modules.contributions.quebec_pension_plan import QuebecPensionPlan
+from tax_calculator.fiscal_modules.contributions.quebec_prescription_drug_insurance import QuebecPrescriptionDrugInsurance
+
+class PythonTaxCalculator(BaseTaxCalculator):
+    """Python implementation of the tax calculator"""
+
     def __init__(self):
         """Initialize tax program calculators"""
         self.employment_insurance_calculator = EmploymentInsurance()
         self.parental_insurance_calculator = ParentalInsurance()
+        self.quebec_pension_plan = QuebecPensionPlan()
+        self.health_services_fund = HealthServicesFund()
+        self.quebec_prescription_drug_insurance = QuebecPrescriptionDrugInsurance()
 
-    def calculate(self, family: Family) -> Dict[str, float]:
-        """Calculate all tax components for the family"""
-        self.validate_inputs(family)
-        
+        self.quebec_income_tax = QuebecIncomeTax()
+        self.social_assistance = SocialAssistance()
+        self.childcare_expenses_credit = ChildcareExpensesCredit()
+
+
+    @property
+    def supported_years(self) -> List[int]:
+        """List of supported tax years"""
+        return [2023, 2024]
+
+    def calculate(self, family: Family) -> dict:
+        """Calculate taxes for the given family"""
+        family.validate()  # Directly validate the family composition
+
+        # Calculate contributions
+        employment_insurance = self.employment_insurance_calculator.calculate(family)
+        parental_insurance = self.parental_insurance_calculator.calculate(family)
+        quebec_pension_plan = self.quebec_pension_plan.calculate(family)
+        health_services_fund = self.health_services_fund.calculate(family)
+        quebec_prescription_drug_insurance = self.quebec_prescription_drug_insurance.calculate(family)
+
+        social_assistance = self.social_assistance.calculate(family)
+        quebec_income_tax = QuebecIncomeTax().calculate(
+            family,
+            {
+                'social_assistance': social_assistance,
+                'employment_insurance': employment_insurance,
+                'parental_insurance': parental_insurance,
+                'quebec_pension_plan': quebec_pension_plan
+            }
+        )
+
+        # Calculate childcare credit
+        family_net_income = quebec_income_tax['family_net_income']
+        childcare_credit = self.childcare_expenses_credit.calculate(family, family_net_income)
+
         # Calculate Quebec taxation system components
         # TODO: Implement these calculators
         quebec_income_tax = {}  # To be implemented
@@ -58,26 +110,45 @@ class PythonTaxCalculator(BaseTaxCalculator):
             'total': 0.0,
         }
 
-        # Calculate all contributions
-        employment_insurance = self.employment_insurance_calculator.calculate(family)
-        parental_insurance = self.parental_insurance_calculator.calculate(family)
-        quebec_pension_plan = 0.0  # To be implemented
-        health_services_fund = 0.0  # To be implemented
-        quebec_prescription_drug_insurance = 0.0  # To be implemented
 
         # Total contributions
+        adult1 = (
+            employment_insurance["adult1"]
+            + parental_insurance["adult1"]
+            + quebec_pension_plan["adult1"]
+            + health_services_fund["adult1"]
+            + quebec_prescription_drug_insurance["adult1"]
+        )
+        adult2 = (
+            employment_insurance["adult2"]
+            + parental_insurance["adult2"]
+            + quebec_pension_plan["adult2"]
+            + health_services_fund["adult2"]
+            + quebec_prescription_drug_insurance["adult2"]
+        )
+
         contributions = {
             'program': "Contributions",
             'tax_year': family.tax_year,
-            'adult1': employment_insurance['adult1'] + parental_insurance['adult1'],
-            'adult2': employment_insurance['adult2'] + parental_insurance['adult2'],
-            'total': employment_insurance['total'] + parental_insurance['total'],
+            'adult1': adult1,
+            'adult2': adult2,
+            'total': adult1 + adult2
         }
-        
+
+        # Calculate total daycare costs
+        total_daycare_costs = sum(child.daycare_cost for child in family.children)
+        total_daycare_costs = -1 * round(total_daycare_costs, 2)
+
         # Calculate final disposable income
-        disposable_income = quebec_tax_system['total'] + federal_tax_system['total'] + contributions['total']
-        
-        return {
+        disposable_income = (
+            quebec_tax_system["total"]
+            + federal_tax_system["total"]
+            + contributions["total"]
+            + total_daycare_costs
+        )
+
+        # Proceed with calculations
+        results = {
             # Base results
             'disposable_income': disposable_income,
             
@@ -108,21 +179,21 @@ class PythonTaxCalculator(BaseTaxCalculator):
             # Contributions
             'contributions': contributions,
             'employment_insurance': employment_insurance,
-            'parental_insurance': {},
-            'quebec_pension_plan': {},
-            'health_services_fund': {},
-            'quebec_prescription_drug_insurance': {}
+            'parental_insurance': parental_insurance,
+            'quebec_pension_plan': quebec_pension_plan,
+            'health_services_fund': health_services_fund,
+            'quebec_prescription_drug_insurance': quebec_prescription_drug_insurance,
+
+            # Daycare costs
+            'daycare_costs': total_daycare_costs
         }
-    
-    def validate_inputs(self, family: Family) -> bool:
-        """Validate family composition"""
-        family.validate()
-        return True
-    
+
+        return results
+
     def get_version(self) -> str:
         """Get calculator version"""
         return "PY-1.0"
-        
+
 
 if __name__ == "__main__":
     calculator = PythonTaxCalculator()

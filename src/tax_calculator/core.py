@@ -106,12 +106,26 @@ class ChildInfo:
 @dataclass
 class Family:
     """Represents a family unit for tax calculations"""
-    status: FamilyStatus
+    family_status: FamilyStatus
     adult1: AdultInfo
     adult2: Optional[AdultInfo] = None
     children: Optional[List[ChildInfo]] = None
     tax_year: int = 2024
 
+    def __post_init__(self):
+        """
+        Post-initialization hook to set retirement status based on family status
+        and perform validation
+        """
+        # Set retirement status based on family status
+        is_retired = 'retraité' in self.family_status.value.lower()
+        self.adult1.is_retired = is_retired
+        if self.adult2:
+            self.adult2.is_retired = is_retired
+
+        # Validate family composition
+        self.validate()
+        
     def validate(self) -> None:
         """
         Validate family composition based on family status.
@@ -119,23 +133,49 @@ class Family:
         Raises:
             ValueError: If the family composition is invalid
         """
-        if 'Couple' in self.status.value and self.adult2 is None:
+        if 'Couple' in self.family_status.value and self.adult2 is None:
             raise ValueError("Second adult required for couple status")
             
-        if 'Couple' not in self.status.value and self.adult2 is not None:
+        if 'Couple' not in self.family_status.value and self.adult2 is not None:
             raise ValueError("Second adult not allowed for single status")
             
-        if 'retraité' in self.status.value:
+        if 'retraité' in self.family_status.value:
             if self.adult1.age < 65:
                 raise ValueError("Primary adult must be 65+ for retired status")
             if self.adult2 and self.adult2.age < 65:
                 raise ValueError("Secondary adult must be 65+ for retired status")
                 
-        if self.children and 'retraité' in self.status.value:
+        if self.children and 'retraité' in self.family_status.value:
             raise ValueError("Retired status cannot have children")
             
-        if self.children and self.status == FamilyStatus.SINGLE:
+        if self.children and self.family_status == FamilyStatus.SINGLE:
             raise ValueError("Single person cannot have children")
+
+    def describe(self) -> str:
+        """Return a string describing the family and its main characteristics"""
+        description = f"Family Status: {self.family_status.name}\n"
+        description += f"Tax Year: {self.tax_year}\n"
+        description += f"Adult 1: Age {self.adult1.age}, "
+        description += f"Gross Work Income: ${self.adult1.gross_work_income}, "
+        description += f"Gross Retirement Income: ${self.adult1.gross_retirement_income}, "
+        description += f"Retired: {'Yes' if self.adult1.is_retired else 'No'}\n"
+        
+        if self.adult2:
+            description += f"Adult 2: Age {self.adult2.age}, "
+            description += f"Gross Work Income: ${self.adult2.gross_work_income}, "
+            description += f"Gross Retirement Income: ${self.adult2.gross_retirement_income}, "
+            description += f"Retired: {'Yes' if self.adult2.is_retired else 'No'}\n"
+        
+        if self.children:
+            description += f"Children: {len(self.children)}\n"
+            for i, child in enumerate(self.children, start=1):
+                description += f"  Child {i}: Age {child.age}, "
+                description += f"Daycare Cost: ${child.daycare_cost}, "
+                description += f"Daycare Type: {child.daycare_type.name}\n"
+        else:
+            description += "Children: None\n"
+        
+        return description
 
 class TaxProgram(ABC):
     """
@@ -190,11 +230,6 @@ class BaseTaxCalculator(ABC):
     def calculate(self, family: Family) -> Dict[str, float]:
         """Calculate tax results for given inputs"""
         pass
-
-    @abstractmethod
-    def validate_inputs(self, family: Family) -> bool:
-        """Validate input combination"""
-        pass
     
     @abstractmethod
     def get_version(self) -> str:
@@ -203,113 +238,27 @@ class BaseTaxCalculator(ABC):
 
     def run_standard_test_cases(self):
         """Run standard test cases"""
-        test_cases = [
-            {
-                "status": FamilyStatus.SINGLE,
-                "adult1": AdultInfo(age=30, gross_work_income=45000),
-                "name": "Single person"
-            },
-            {
-                "status": FamilyStatus.SINGLE_PARENT,
-                "adult1": AdultInfo(age=35, gross_work_income=50000),
-                "children": [
-                    ChildInfo(
-                        age=4,
-                        daycare_cost=8000,
-                        daycare_type=DaycareType.SUBSIDIZED
-                    )
-                ],
-                "name": "Single parent, one child"
-            },
-            {
-                "status": FamilyStatus.COUPLE,
-                "adult1": AdultInfo(age=40, gross_work_income=75000),
-                "adult2": AdultInfo(age=38, gross_work_income=65000),
-                "name": "Working couple, no children"
-            },
-            {
-                "status": FamilyStatus.COUPLE,
-                "adult1": AdultInfo(age=42, gross_work_income=80000),
-                "adult2": AdultInfo(age=41, gross_work_income=55000),
-                "children": [
-                    ChildInfo(age=6, daycare_cost=9500, daycare_type=DaycareType.NON_SUBSIDIZED),
-                    ChildInfo(age=3, daycare_cost=8500, daycare_type=DaycareType.SUBSIDIZED)
-                ],
-                "name": "Couple with two children"
-            },
-            {
-                "status": FamilyStatus.RETIRED_COUPLE,
-                "adult1": AdultInfo(age=68, gross_retirement_income=45000, is_retired=True),
-                "adult2": AdultInfo(age=66, gross_retirement_income=40000, is_retired=True),
-                "name": "Retired couple"
-            },
-        ]
+        test_cases = generate_standard_test_cases()
         return self._run_test_cases(test_cases)
 
     def run_generated_test_cases(self, num_cases: int = 5):
         """Run randomly generated test cases"""
-        from test_case_generator import generate_test_cases
-        raw_cases = generate_test_cases(num_cases)
-        structured_cases = self._convert_raw_cases(raw_cases)
-        return self._run_test_cases(structured_cases)
+        test_cases = generate_random_test_cases(num_cases)
+        return self._run_test_cases(test_cases)
 
-    def _convert_raw_cases(self, raw_cases: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """Convert raw test cases to structured format"""
-        structured_cases = []
-        for raw_case in raw_cases:
-            case = {
-                "status": FamilyStatus(raw_case["situation"]),
-                "adult1": AdultInfo(
-                    age=raw_case["age1"],
-                    income=raw_case["income1"]
-                ),
-                "name": raw_case["situation"]
-            }
-            
-            if raw_case.get("income2", 0) > 0:
-                case["adult2"] = AdultInfo(
-                    age=raw_case["age2"],
-                    income=raw_case["income2"]
-                )
-                
-            if raw_case["num_children"] > 0:
-                children = []
-                for i in range(1, raw_case["num_children"] + 1):
-                    child = ChildInfo(
-                        age=raw_case[f"child_age{i}"],
-                        daycare_cost=raw_case.get(f"daycare_fee{i}", 0),
-                        daycare_type=DaycareType(
-                            raw_case.get(f"daycare_type{i}", "Subventionnée")
-                        )
-                    )
-                    children.append(child)
-                case["children"] = children
-                
-            structured_cases.append(case)
-        return structured_cases
-
-    def _run_test_cases(self, test_cases: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _run_test_cases(self, test_cases: List[Family]) -> List[Dict[str, Any]]:
         """Run test cases and return results"""
         results = []
-        for case in test_cases:
-            print(f"\nTesting: {case['name']}")
-            print("-" * 50)
+        for family in test_cases:
+            print(f"\nTesting: {family.describe()}")
             
             try:
-                # Créer un objet Family avec les données du cas de test
-                family = Family(
-                    status=case["status"],
-                    adult1=case["adult1"],
-                    adult2=case.get("adult2"),
-                    children=case.get("children", None)
-                )
-                
                 # Passer l'objet Family à calculate()
                 calc_results = self.calculate(family)
                 
                 self._print_results(calc_results)
                 results.append({
-                    "case": case,
+                    "family": family,
                     "results": calc_results,
                     "success": True
                 })
@@ -317,7 +266,7 @@ class BaseTaxCalculator(ABC):
             except Exception as e:
                 print(f"Error: {str(e)}")
                 results.append({
-                    "case": case,
+                    "family": family,
                     "error": str(e),
                     "success": False
                 })
@@ -325,18 +274,130 @@ class BaseTaxCalculator(ABC):
 
     def _print_results(self, results: Dict[str, Any]) -> None:
         """Print calculation results in a formatted way"""
-        print("\nResults:")
-        print("-" * 20)
         for key, value in results.items():
             if isinstance(value, dict):
-                print(f"\n{key}:")
+                print(f"{key}:")
                 for sub_key, sub_value in value.items():
                     # Skip non-numeric values or handle them differently
                     if isinstance(sub_value, (int, float)):
-                        print(f"  {sub_key}: ${sub_value:,.2f}")
+                        print(f"  {sub_key}: {sub_value:,.2f}")
                     else:
                         print(f"  {sub_key}: {sub_value}")
             elif isinstance(value, (int, float)):
-                print(f"{key}: ${value:,.2f}")
+                print(f"{key}: {value:,.2f}")
             else:
                 print(f"{key}: {value}")
+
+from typing import List
+
+def generate_standard_test_cases() -> List[Family]:
+    """Generate standard test cases and return a list of Family objects"""
+    test_cases = [
+        Family(
+            family_status=FamilyStatus.SINGLE,
+            adult1=AdultInfo(age=30, gross_work_income=45000)
+        ),
+        Family(
+            family_status=FamilyStatus.RETIRED_SINGLE,
+            adult1=AdultInfo(age=35, gross_retirement_income=25000, is_retired=True)
+        ),
+        Family(
+            family_status=FamilyStatus.COUPLE,
+            adult1=AdultInfo(age=40, gross_work_income=75000),
+            adult2=AdultInfo(age=38, gross_work_income=65000)
+        ),
+        Family(
+            family_status=FamilyStatus.COUPLE,
+            adult1=AdultInfo(age=42, gross_work_income=80000),
+            adult2=AdultInfo(age=41, gross_work_income=55000),
+            children=[
+                ChildInfo(age=6, daycare_cost=9500, daycare_type=DaycareType.NON_SUBSIDIZED),
+                ChildInfo(age=3, daycare_cost=8500, daycare_type=DaycareType.SUBSIDIZED)
+            ]
+        ),
+        Family(
+            family_status=FamilyStatus.RETIRED_COUPLE,
+            adult1=AdultInfo(age=68, gross_retirement_income=45000, is_retired=True),
+            adult2=AdultInfo(age=66, gross_retirement_income=40000, is_retired=True)
+        ),
+    ]
+    return test_cases
+
+import random
+from typing import List
+from tax_calculator.core import Family, FamilyStatus, AdultInfo, ChildInfo, DaycareType
+
+def generate_random_test_cases(num_cases: int = 10) -> List[Family]:
+    """
+    Generates random test cases for the tax calculator
+    
+    Args:
+        num_cases: Number of test cases to generate
+        
+    Returns:
+        List of Family objects
+    """
+    
+    family_situations = [
+        FamilyStatus.SINGLE,
+        FamilyStatus.SINGLE_PARENT,
+        FamilyStatus.COUPLE,
+        FamilyStatus.RETIRED_SINGLE,
+        FamilyStatus.RETIRED_COUPLE
+    ]
+    
+    incomes = list(range(0, 125001, 1000))
+    worker_ages = [25, 35, 45, 55]
+    retirement_ages = [65, 75, 85]
+    child_ages = [2, 5, 10, 15]
+    num_children = range(6)  # 0 to 5 children
+    daycare_fees = [0, 8000, 15000]
+    daycare_types = [DaycareType.SUBSIDIZED, DaycareType.NON_SUBSIDIZED]
+
+    test_cases = []
+    
+    for _ in range(num_cases):
+        family_status = random.choice(family_situations)
+        is_retired = 'retraité' in family_status.value.lower()
+        is_couple = 'Couple' in family_status.value
+        can_have_children = not is_retired and family_status != FamilyStatus.SINGLE
+
+        adult1 = AdultInfo(
+            age=random.choice(retirement_ages if is_retired else worker_ages),
+            gross_work_income=random.choice(incomes) if not is_retired else 0,
+            gross_retirement_income=random.choice(incomes) if is_retired else 0,
+            is_retired=is_retired
+        )
+
+        adult2 = None
+        if is_couple:
+            adult2 = AdultInfo(
+                age=random.choice(retirement_ages if is_retired else worker_ages),
+                gross_work_income=random.choice(incomes) if not is_retired else 0,
+                gross_retirement_income=random.choice(incomes) if is_retired else 0,
+                is_retired=is_retired
+            )
+
+        children = []
+        if can_have_children:
+            num_kids = random.choice(num_children)
+            for i in range(num_kids):
+                child_age = random.choice(child_ages)
+                daycare_cost = random.choice(daycare_fees) if child_age <= 5 else 0
+                daycare_type = random.choice(daycare_types) if child_age <= 5 else DaycareType.SUBSIDIZED
+                children.append(ChildInfo(
+                    age=child_age,
+                    daycare_cost=daycare_cost,
+                    daycare_type=daycare_type
+                ))
+
+        family = Family(
+            family_status=family_status,
+            adult1=adult1,
+            adult2=adult2,
+            children=children
+        )
+        
+        test_cases.append(family)
+    
+    return test_cases

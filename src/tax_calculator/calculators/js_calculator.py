@@ -7,9 +7,9 @@ Provides a Python interface to the existing JavaScript calculator.
 
 import sys
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from selenium.common.exceptions import WebDriverException
-from core import (
+from tax_calculator.core import (
     BaseTaxCalculator,
     FamilyStatus,
     AdultInfo,
@@ -19,16 +19,17 @@ from core import (
 )
 
 class JSTaxCalculator(BaseTaxCalculator):
-    """Implementation that wraps the JavaScript calculator using Selenium"""
+    """JavaScript implementation of the tax calculator"""
     
     def __init__(self):
         """Initialize the JavaScript calculator wrapper"""
         from selenium import webdriver
         from selenium.webdriver.firefox.service import Service
         
-        project_root_path = Path(__file__).parent.parent.parent  
+        project_root_path = Path(__file__).parent.parent
         static_folder_path = project_root_path / "static" 
         html_path = static_folder_path / "revdisp" / "html" / "calculator.html"
+        print(html_path)
 
         if not html_path.exists():
             raise FileNotFoundError(f"Calculator HTML not found at: {html_path}")
@@ -129,33 +130,31 @@ class JSTaxCalculator(BaseTaxCalculator):
         
         return results
         
-    def calculate(self,
-                  family_status: FamilyStatus,
-                  adult1: AdultInfo,
-                  adult2: Optional[AdultInfo] = None,
-                  children: Optional[list[ChildInfo]] = None) -> Dict[str, float]:
-        """Calculate using the JavaScript implementation"""
+    @property
+    def supported_years(self) -> List[int]:
+        """List of supported tax years"""
+        return [2023, 2024]
 
-        # Create and validate family object
-        family = Family(
-            status=family_status,
-            adult1=adult1,
-            adult2=adult2,
-            children=children
-        )
+    def calculate(self, family: Family) -> Dict[str, float]:
+        """Calculate using the JavaScript implementation"""
         family.validate()
+
+        family_status = family.family_status
+        adult1 = family.adult1
+        adult2 = family.adult2
+        children = family.children
 
         try:
             # Set family situation
             self._select_by_text('Situation', family_status.value)
             
             # Set primary adult info
-            self._fill_field('Revenu1', adult1.income)
+            self._fill_field('Revenu1', adult1.gross_work_income + adult1.gross_retirement_income)
             self._fill_field('AgeAdulte1', adult1.age)
             
             # Set secondary adult info if present
             if adult2 is not None:
-                self._fill_field('Revenu2', adult2.income)
+                self._fill_field('Revenu2', adult2.gross_work_income + adult2.gross_retirement_income)
                 self._fill_field('AgeAdulte2', adult2.age)
             
             # Set children info if present
@@ -178,33 +177,8 @@ class JSTaxCalculator(BaseTaxCalculator):
             return self._extract_results()
             
         except Exception as e:
-            raise RuntimeError(f"JavaScript calculation failed: {str(e)}")
-    
-    def calculate_raw(self, inputs: Dict[str, Any]) -> Dict[str, float]:
-        """Calculate using raw dictionary"""
-        return self.calculate(
-            family_status=FamilyStatus(inputs['situation']),
-            adult1=AdultInfo(age=inputs['age1'], income=inputs['income1']),
-            adult2=(AdultInfo(age=inputs['age2'], income=inputs['income2']) 
-                   if inputs.get('income2', 0) > 0 else None),
-            children=self._convert_raw_children(inputs)
-        )
-    
-    def validate_inputs(self,
-                       family_status: FamilyStatus,
-                       adult1: AdultInfo,
-                       adult2: Optional[AdultInfo] = None,
-                       children: Optional[list[ChildInfo]] = None) -> bool:
-        """Validate inputs by creating and validating a Family object"""
-        family = Family(
-            status=family_status,
-            adult1=adult1,
-            adult2=adult2,
-            children=children
-        )
-        family.validate()
-        return True
-    
+            raise ValueError(f"JavaScript calculation failed: {str(e)}")
+
     def get_version(self) -> str:
         """Get the version identifier"""
         return "JS-1.0"  # You might want to extract this from your JS files

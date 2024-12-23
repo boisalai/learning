@@ -1,15 +1,15 @@
 """
-Social Assistance Program
+Canada Worker's Benefit
 
 Parameters:
-    - https://www.quebec.ca/famille-et-soutien-aux-personnes/aide-sociale-et-solidarite-sociale/information-aide-financiere/montants-prestations-aide-sociale
+    - ???
 """
 
 from typing import Dict, List, Any
 from tax_calculator.core import TaxProgram, Family, FamilyStatus, AdultInfo
 
 
-class SocialAssistance(TaxProgram):
+class CanadaChildBenefit(TaxProgram):
     PARAMS = {
         2025: {
             '?': 65700.0,
@@ -24,7 +24,7 @@ class SocialAssistance(TaxProgram):
 
     @property
     def name(self) -> str:
-        return "Employment Insurance"
+        return "Canada Worker's Benefit"
 
     @property
     def supported_years(self) -> List[int]:
@@ -44,15 +44,3 @@ class SocialAssistance(TaxProgram):
             'adult2': benefit2,
             'total': benefit1 + benefit2,
         }
-
-if __name__ == "__main__":
-    social_assistance = SocialAssistance()
-    sa = social_assistance.calculate(Family(
-        tax_year=2024,
-        family_status=FamilyStatus.SINGLE,
-        adult1=AdultInfo(age=30, gross_work_income=0.0),
-        adult2=None,
-        children=[]
-    ))
-
-    print(sa)

@@ -12,21 +12,35 @@ class QuebecPensionPlan(TaxProgram):
     """Quebec Pension Plan (RRQ) calculator"""
 
     PARAMS = {
-        2024: {
-            'max_pensionable_earnings': 68500.0,
+        2025: {
+            # See https://www.revenuquebec.ca/fr/entreprises/retenues-et-cotisations/trousse-employeur/principaux-changements-pour-lannee-2025-trousse-employeur/
+            'max_pensionable_earnings': 71300.0, 
             'basic_exemption': 3500.0,
             'base_rate': 0.054,
-            'enhancement_rate': 0.015,
-            'total_rate': 0.069,  # base_rate + enhancement_rate
-            'max_contribution': 4475.85
+            'enhancement_rate': 0.01,
+            'additional_max_annual_pensionable_earnings': 81200.0,
+            'additional_base_rate': 0.04,
+            'max_contribution': 4735.20,
+        },
+        2024: {
+            # See https://www.revenuquebec.ca/fr/entreprises/retenues-et-cotisations/calculer-les-retenues-a-la-source-et-vos-cotisations-demployeur/regime-de-rentes-du-quebec/maximum-du-salaire-admissible-et-taux-de-cotisation/
+            # See https://www.usherbrooke.ca/srh/nouvelles/details/52328
+            'max_pensionable_earnings': 68500.0, 
+            'basic_exemption': 3500.0,
+            'base_rate': 0.054,
+            'enhancement_rate': 0.01,
+            'additional_max_annual_pensionable_earnings': 73200.0,
+            'additional_base_rate': 0.04,
+            'max_contribution': 4348.00,
         },
         2023: {
             'max_pensionable_earnings': 66600.0,
             'basic_exemption': 3500.0,
             'base_rate': 0.054,
-            'enhancement_rate': 0.015,
-            'total_rate': 0.069,
-            'max_contribution': 4495.40
+            'enhancement_rate': 0.01,
+            'additional_max_annual_pensionable_earnings': 0.0,
+            'additional_base_rate': 0.0,
+            'max_contribution': 4038.40,
         }
     }
 
@@ -48,11 +62,19 @@ class QuebecPensionPlan(TaxProgram):
                 return 0.0
                 
             pensionable_earnings = min(income, params['max_pensionable_earnings'])
-            contribution = (pensionable_earnings - params['basic_exemption']) * params['total_rate']
+            rate = params['base_rate'] + params['enhancement_rate'] 
+            contribution = (pensionable_earnings - params['basic_exemption']) * rate
+            if income > params['max_pensionable_earnings']:
+                additional_pensionable_earnings = min(income, params['additional_max_annual_pensionable_earnings']) - params['max_pensionable_earnings']
+                contribution += additional_pensionable_earnings * params['additional_base_rate']
+
             return min(contribution, params['max_contribution'])
 
-        contribution1 = -1 * calculate_contribution(family.adult1.gross_work_income)
-        contribution2 = -1 * calculate_contribution(family.adult2.gross_work_income) if family.adult2 else 0.0
+        contribution1 = calculate_contribution(family.adult1.gross_work_income)
+        contribution2 = calculate_contribution(family.adult2.gross_work_income) if family.adult2 else 0.0
+
+        contribution1 = -1 * round(contribution1, 2)
+        contribution2 = -1 * round(contribution2, 2)
 
         return {
             'program': self.name,
@@ -75,7 +97,7 @@ def chart():
     for income in incomes:
         adult = AdultInfo(age=30, gross_work_income=income)
         test_case = {
-            "status": FamilyStatus.SINGLE,
+            "family_status": FamilyStatus.SINGLE,
             "adult1": adult,
             "tax_year": 2024
         }
