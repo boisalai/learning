@@ -162,47 +162,22 @@ class OldAgeSecurity(TaxProgram):
         self.validate_year(family.tax_year)
         params = self.PARAMS[family.tax_year]
 
-        var oas1 = 0;
-        var oas2 = 0;
+        # DÉBUT DE LA LOGIQUE DE CALCUL
 
-        if (type.age1 >= 65 || type.age2 >= 65) {
-            var p = param[year];
-
-            // Prestation annuelle maximale.
-            var ipc = Math.pow(1.02, 1 / 4);
-            if (p.max2 == 0) p.max2 = p.max1 * ipc;
-            if (p.max3 == 0) p.max3 = p.max2 * ipc;
-            if (p.max4 == 0) p.max4 = p.max3 * ipc;
-            var max = (p.max1 + p.max2 + p.max3 + p.max4) * 3;
-
-            # Qu'entend-on par revenu net de toutes provenances?
-            # Éventuellement, faudrait ajouter dividendes, emplois, etc...
-            # https://www.canada.ca/fr/agence-revenu/services/formulaires-publications/publications/t4155/t4155-declaration-revenus-securite-vieillesse-non-residents.html#Rvnu_d_tts_prvnncs
-            # https://www.canada.ca/fr/agence-revenu/services/formulaires-publications/formulaires/t1136.html */
-
-            if (type.age1 >= 65) {
-                /* Le remboursement est égal à 15 % de la partie de votre revenu net (incluant les prestations de la SV ) 
-                qui dépasse 79 845 $ en 2021. */
-                var netIncome1 = type.revenuTotal1;
-                var reduction = Math.max(0, (netIncome1 + max - p.threshold) * p.rate);
-                oas1 = Math.max(0, max - reduction);
-            }
-
-            if (type.nbAdultes == 2 && type.age1 >= 65) {
-                var netIncome2 = type.revenuTotal2;
-                var reduction = Math.max(0, (netIncome2 + max - p.threshold) * p.rate);
-                oas2 = Math.max(0, max - reduction);
-            }
-
-            oas1 = round(oas1, 2);
-            oas2 = round(oas2, 2);
+        # FIN DE LA LOGIQUE DE CALCUL
         
         return {
             'program': self.name,
             'tax_year': family.tax_year,
-            'adult1': oas1,
-            'adult2': oas1,
-            'total': oas1 + oas2,
+            'adult1': benefit1,
+            'adult2': benefit1,
+            'total': benefit1 + benefit2,
+            'details': {
+                'oas1': oas1,
+                'oas2': oas2,
+                'gis': gis,
+                'allowance': allowance
+            }
         }
 
 
