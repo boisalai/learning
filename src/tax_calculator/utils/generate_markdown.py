@@ -1,3 +1,7 @@
+"""
+
+https://gitingest.com/boisalai/learning
+"""
 import os
 
 def generate_markdown(directory, output_file):
@@ -7,11 +11,11 @@ def generate_markdown(directory, output_file):
                 if file.endswith('.py'):
                     file_path = os.path.join(root, file)
                     relative_path = os.path.relpath(file_path, directory)
-                    md_file.write(f"# Learning/src/tax_calculator/{relative_path}\n\n")
-                    md_file.write("```python\n")
+                    md_file.write(f"================================================\n")
+                    md_file.write(f"# Learning/src/tax_calculator/{relative_path}\n")
+                    md_file.write(f"================================================\n")
                     with open(file_path, 'r') as py_file:
                         md_file.write(py_file.read())
-                    md_file.write("\n```\n\n")
     
 if __name__ == "__main__":
     project_directory = "/Users/alain/Workspace/GitHub/Learning/src/tax_calculator"

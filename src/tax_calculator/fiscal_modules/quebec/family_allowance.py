@@ -1,6 +1,8 @@
 """
 Family allowance
 
+[Family Allowance](https://www.rrq.gouv.qc.ca/en/enfants/naissance/paiement_soutien_enfants/Pages/paiement_soutien_enfants.aspx) provides financial assistance to all eligible families with dependent children under age 18. In Québec, a parent is not required to file an application in order to receive Family Allowance payments. By declaring a birth to the Directeur de l'état civil, a parent automatically registers his or her child to this measure.  
+
 Parameters
     https://cffp.recherche.usherbrooke.ca/outils-ressources/guide-mesures-fiscales/allocation-famille/#:~:text=Le%20seuil%20du%20revenu%20familial,de%20r%C3%A9duction%20est%20de%204%20%25.
 """

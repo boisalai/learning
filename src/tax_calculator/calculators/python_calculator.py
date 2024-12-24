@@ -15,29 +15,56 @@ from tax_calculator.core import (
 
 from tax_calculator.fiscal_modules.quebec.quebec_income_tax import QuebecIncomeTax
 from tax_calculator.fiscal_modules.quebec.social_assistance import SocialAssistance
+from tax_calculator.fiscal_modules.quebec.family_allowance import FamilyAllowance
+from tax_calculator.fiscal_modules.quebec.school_supplies_supplement import SchoolSuppliesSupplement
+from tax_calculator.fiscal_modules.quebec.work_premium import WorkPremium
+from tax_calculator.fiscal_modules.quebec.solidarity_tax_credit import SolidarityTaxCredit
 from tax_calculator.fiscal_modules.quebec.childcare_expenses_credit import ChildcareExpensesCredit
+from tax_calculator.fiscal_modules.quebec.shelter_allowance import ShelterAllowance
+from tax_calculator.fiscal_modules.quebec.medical_expenses_credit import MedicalExpensesCredit
+from tax_calculator.fiscal_modules.quebec.senior_assistance_amount import SeniorAssistanceAmount
+
+from tax_calculator.fiscal_modules.canada.federal_income_tax import FederalIncomeTax
+from tax_calculator.fiscal_modules.canada.canada_child_benefit import CanadaChildBenefit
+from tax_calculator.fiscal_modules.canada.gst_credit import GSTCredit
+from tax_calculator.fiscal_modules.canada.canada_workers_benefit import CanadaWorkersBenefit
+from tax_calculator.fiscal_modules.canada.old_age_security import OldAgeSecurity
+from tax_calculator.fiscal_modules.canada.medical_expenses_supplement import MedicalExpensesSupplement
 
 from tax_calculator.fiscal_modules.contributions.employment_insurance import EmploymentInsurance
-from tax_calculator.fiscal_modules.contributions.health_services_fund import HealthServicesFund
 from tax_calculator.fiscal_modules.contributions.parental_insurance import ParentalInsurance
 from tax_calculator.fiscal_modules.contributions.quebec_pension_plan import QuebecPensionPlan
+from tax_calculator.fiscal_modules.contributions.health_services_fund import HealthServicesFund
 from tax_calculator.fiscal_modules.contributions.quebec_prescription_drug_insurance import QuebecPrescriptionDrugInsurance
 
 class PythonTaxCalculator(BaseTaxCalculator):
     """Python implementation of the tax calculator"""
 
     def __init__(self):
-        """Initialize tax program calculators"""
+        """Initialize tax program calculators"""        
+        self.quebec_income_tax = QuebecIncomeTax()
+        self.social_assistance = SocialAssistance()
+        self.family_allowance = FamilyAllowance()
+        self.school_supplies_supplement = SchoolSuppliesSupplement()
+        self.work_premium = WorkPremium()
+        self.solidarity_tax_credit = SolidarityTaxCredit()
+        self.childcare_expenses_credit = ChildcareExpensesCredit()
+        self.shelter_allowance = ShelterAllowance()
+        self.medical_expenses_credit = MedicalExpensesCredit()
+        self.senior_assistance_amount = SeniorAssistanceAmount()
+
+        self.federal_income_tax = FederalIncomeTax()
+        self.canada_child_benefit = CanadaChildBenefit()
+        self.gst_credit = GSTCredit()
+        self.canada_workers_benefit = CanadaWorkersBenefit()
+        self.old_age_security = OldAgeSecurity()
+        self.medical_expenses_supplement = MedicalExpensesSupplement()
+        
         self.employment_insurance_calculator = EmploymentInsurance()
         self.parental_insurance_calculator = ParentalInsurance()
         self.quebec_pension_plan = QuebecPensionPlan()
         self.health_services_fund = HealthServicesFund()
         self.quebec_prescription_drug_insurance = QuebecPrescriptionDrugInsurance()
-
-        self.quebec_income_tax = QuebecIncomeTax()
-        self.social_assistance = SocialAssistance()
-        self.childcare_expenses_credit = ChildcareExpensesCredit()
-
 
     @property
     def supported_years(self) -> List[int]:
@@ -55,7 +82,25 @@ class PythonTaxCalculator(BaseTaxCalculator):
         health_services_fund = self.health_services_fund.calculate(family)
         quebec_prescription_drug_insurance = self.quebec_prescription_drug_insurance.calculate(family)
 
+        # Federal tax system components
+        federal_income_tax = self.federal_income_tax.calculate(family)
+        canada_child_benefit = self.canada_child_benefit.calculate(family)
+        gst_credit = self.gst_credit.calculate(family)
+        canada_workers_benefit = self.canada_workers_benefit.calculate(family)
+        old_age_security = self.old_age_security.calculate(family)
+        medical_expenses_supplement = self.medical_expenses_supplement.calculate(family)
+
+        federal_tax_system = {
+            'program': 'Federal Taxation System',
+            'tax_year': family.tax_year,
+            'adult1': 0.0,
+            'adult2': 0.0,
+            'total': 0.0,
+        }
+
+        # Quebec tax system components
         social_assistance = self.social_assistance.calculate(family)
+        work_premium = self.work_premium.calculate(family)
         quebec_income_tax = QuebecIncomeTax().calculate(
             family,
             {
@@ -66,24 +111,13 @@ class PythonTaxCalculator(BaseTaxCalculator):
             }
         )
 
-        # Calculate childcare credit
         family_net_income = quebec_income_tax['family_net_income']
+        family_allowance = self.family_allowance.calculate(family, family_net_income)
+        solidarity_tax_credit = self.solidarity_tax_credit.calculate(family, family_net_income)        
         childcare_credit = self.childcare_expenses_credit.calculate(family, family_net_income)
-
-        # Calculate Quebec taxation system components
-        # TODO: Implement these calculators
-        quebec_income_tax = {}  # To be implemented
-        amount_before_tax_cut = {}  # To be implemented
-        tax_cut = {}  # To be implemented
-        social_assistance = {}  # To be implemented
-        family_allowance = {}  # To be implemented
-        school_supplies_supplement = {}  # To be implemented
-        work_premium = {}  # To be implemented
-        solidarity_tax_credit = {}
-        childcare_expenses_credit = {}
-        shelter_allowance = {}
-        medical_expenses_credit = {}
-        senior_assistance_amount = {}
+        shelter_allowance = self.shelter_allowance.calculate(family, family_net_income)
+        medical_expenses_credit = self.medical_expenses_credit.calculate(family, family_net_income)
+        senior_assistance_amount = self.senior_assistance_amount.calculate(family, family_net_income)
 
         quebec_tax_system = {
             'program': 'Quebec Taxation System',
@@ -93,23 +127,7 @@ class PythonTaxCalculator(BaseTaxCalculator):
             'total': 0.0,
         }
 
-        # Calculate Federal tax system components
-        # TODO: Implement these calculators
-        federal_income_tax = {}  # To be implemented
-        canada_child_benefit = {}
-        gst_credit = {}
-        canada_workers_benefit = {}
-        old_age_security = {}
-        medical_expenses_supplement = {}
-
-        federal_tax_system = {
-            'program': 'Federal Taxation System',
-            'tax_year': family.tax_year,
-            'adult1': 0.0,
-            'adult2': 0.0,
-            'total': 0.0,
-        }
-
+        
 
         # Total contributions
         adult1 = (
