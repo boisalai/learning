@@ -1,15 +1,15 @@
 """
-Canada Worker's Benefit
+Canada Workers Benefit (CWB)
 
-Parameters:
-    - ???
+References:
+    - [Canada Workers Benefit](https://www.canada.ca/en/revenue-agency/services/child-family-benefits/canada-workers-benefit.html)
 """
 
 from typing import Dict, List, Any
 from tax_calculator.core import TaxProgram, Family, FamilyStatus, AdultInfo
 
 
-class CanadaChildBenefit(TaxProgram):
+class CanadaWorkersBenefit(TaxProgram):
     PARAMS = {
         2025: {
             '?': 65700.0,

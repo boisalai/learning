@@ -11,6 +11,9 @@ TODO:
     - Voir https://www.taxtips.ca/taxrates/canada.htm
 """
 
+from typing import Dict, List, Any
+from tax_calculator.core import TaxProgram, Family, FamilyStatus, AdultInfo, ChildInfo
+
 
 class FederalIncomeTax(TaxProgram):
     PARAMS = {
@@ -19,7 +22,7 @@ class FederalIncomeTax(TaxProgram):
                 (57375, 0.15),
                 (114750, 0.205),
                 (177882, 0.26),
-                (253414, 0.2932),
+                (253414, 0.29),
                 (float('inf'), 0.33)
             ],
             'basic_personal_amount': 15569
@@ -29,7 +32,7 @@ class FederalIncomeTax(TaxProgram):
                 (55867, 0.15),
                 (111733, 0.205),
                 (173205, 0.26),
-                (246752, 0.2932),
+                (246752, 0.29),
                 (float('inf'), 0.33),
             ],
             'basic_personal_max_amount': 15705.0,

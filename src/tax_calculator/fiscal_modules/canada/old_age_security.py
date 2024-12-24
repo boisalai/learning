@@ -28,7 +28,7 @@ from tax_calculator.core import TaxProgram, Family, FamilyStatus, AdultInfo
 class OldAgeSecurity(TaxProgram):
     PARAMS = {
         2024: {
-            'period1': {
+            'jan_to_march': {
                 'oas_under_75': 713.34,  # Old Age Security Pension (age 65 to 74)
                 'oas_over_75': 784.67,  # Old Age Security Pension (age 75 and over)
                 'gis_single_top_up': 165.04,  # Guaranteed Income Supplement, Single, Top-Up Amount
@@ -37,8 +37,11 @@ class OldAgeSecurity(TaxProgram):
                 'gis_couple_max': 641.35,  # Guaranteed Income Supplement, Couple, Maximum Amount
                 'allowance_top_up': 46.76,  # Allowance, Married, Top-Up Amount
                 'allowance_max': 1354.69,  # Allowance, Married, Maximum Amount
+                'gis_single_threshold': 21624.0,  # Income threshold for single, widowed or divorced
+                'gis_couple_threshold': 28560.0,  # Income threshold for couple with full OAS pension
+                'allowance_threshold': 39984.0,   # Income threshold when spouse receives Allowance
             },
-            'period2': {
+            'april_to_june': {
                 'oas_under_75': 713.34,
                 'oas_over_75': 784.67,
                 'gis_single_top_up': 165.04,
@@ -47,8 +50,11 @@ class OldAgeSecurity(TaxProgram):
                 'gis_couple_max': 641.35,
                 'allowance_top_up': 46.76,
                 'allowance_max': 1354.69,
+                'gis_single_threshold': 21624.0,  # Income threshold for single, widowed or divorced
+                'gis_couple_threshold': 28560.0,  # Income threshold for couple with full OAS pension
+                'allowance_threshold': 39984.0,   # Income threshold when spouse receives Allowance
             },
-            'period3': {
+            'july_to_sept': {
                 'oas_under_75': 718.33,
                 'oas_over_75': 790.16,
                 'gis_single_top_up': 166.20,
@@ -57,8 +63,11 @@ class OldAgeSecurity(TaxProgram):
                 'gis_couple_max': 645.84,
                 'allowance_top_up': 47.09,
                 'allowance_max': 1364.17,
+                'gis_single_threshold': 21768.0,  # Income threshold for single, widowed or divorced
+                'gis_couple_threshold': 28752.0,  # Income threshold for couple with full OAS pension
+                'allowance_threshold': 40272.0,   # Income threshold when spouse receives Allowance
             },
-            'period4': {
+            'oct_to_dec': {
                 'oas_under_75': 727.67,
                 'oas_over_75': 800.44,
                 'gis_single_top_up': 168.36,
@@ -67,20 +76,19 @@ class OldAgeSecurity(TaxProgram):
                 'gis_couple_max': 654.23,
                 'allowance_top_up': 47.70,
                 'allowance_max': 1381.90,
-                # https://www.canada.ca/fr/emploi-developpement-social/programmes/pensions/pension/statistiques/rapport-trimestriel/2024-trimestriel-octobre-decembre.html
+                'gis_single_threshold': 22056.0,  # Income threshold for single, widowed or divorced
+                'gis_couple_threshold': 29136.0,  # Income threshold for couple with full OAS pension
+                'allowance_threshold': 40800.0,   # Income threshold when spouse receives Allowance
             },
             'oas_recovery_threshold': 90997.0,  # OAS Recovery Threshold
             'oas_recovery_rate': 0.15,  # OAS Recovery Rate
             'gis_work_income_deduction': 5000.0,  # GIS Work Deduction
             'gis_partial_work_income_exemption': 5000.0,  # GIS Partial Work Exemption
             'gis_partial_work_income_rate': 0.5,  # GIS Partial Work Deduction
-            'gis_single_threshold': 22056.0,  # GIS Single Threshold  Ce montant change d'un trimestre à l'autre
-            'gis_couple_threshold': 29136.0,  # GIS Single Threshold
-            'allowance_threshold': 40800.0,  # Allowance Threshold
-            # See https://www.taxtips.ca/seniors/guaranteed-income-supplement.htm
         },
         2023: {
-            'period1': {
+            'jan_to_march': {
+                # https://www.canada.ca/en/employment-social-development/programs/pensions/pension/statistics/2023-quarterly-january-march.html
                 'oas_under_75': 687.56,
                 'oas_over_75': 756.32,
                 'gis_single_top_up': 159.07,
@@ -89,8 +97,12 @@ class OldAgeSecurity(TaxProgram):
                 'gis_couple_max': 618.15,
                 'allowance_top_up': 45.06,
                 'allowance_max': 1556.51,
+                'gis_single_threshold': 20832.0,  # Income threshold for single, widowed or divorced
+                'gis_couple_threshold': 27552.0,  # Income threshold for couple with full OAS pension
+                'allowance_threshold': 38592.0,   # Income threshold when spouse receives Allowance
             },
-            'period2': {
+            'april_to_june': {
+                # https://www.canada.ca/en/employment-social-development/programs/pensions/pension/statistics/2023-quarterly-april-june.html
                 'oas_under_75': 691.00,
                 'oas_over_75': 760.10,
                 'gis_single_top_up': 159.87,
@@ -99,8 +111,11 @@ class OldAgeSecurity(TaxProgram):
                 'gis_couple_max': 621.25,
                 'allowance_top_up': 45.29,
                 'allowance_max': 1312.25,
+                'gis_single_threshold': 20952.0,  # Income threshold for single, widowed or divorced
+                'gis_couple_threshold': 27648.0,  # Income threshold for couple with full OAS pension
+                'allowance_threshold': 38736.0,   # Income threshold when spouse receives Allowance
             },
-            'period3': {
+            'july_to_sept': {
                 'oas_under_75': 698.60,
                 'oas_over_75': 768.46,
                 'gis_single_top_up': 161.63,
@@ -109,8 +124,12 @@ class OldAgeSecurity(TaxProgram):
                 'gis_couple_max': 628.09,
                 'allowance_top_up': 45.79,
                 'allowance_max': 1326.69,
+                'gis_single_threshold': 21168.0,  # Income threshold for single, widowed or divorced
+                'gis_couple_threshold': 27984.0,  # Income threshold for couple with full OAS pension
+                'allowance_threshold': 39168.0,   # Income threshold when spouse receives Allowance
             },
-            'period4': {
+            'oct_to_dec': {
+                # https://www.canada.ca/en/employment-social-development/programs/pensions/pension/statistics/2023-quarterly-october-december.html
                 'oas_under_75': 707.68,
                 'oas_over_75': 778.45,
                 'gis_single_top_up': 163.73,
@@ -119,17 +138,15 @@ class OldAgeSecurity(TaxProgram):
                 'gis_couple_max': 636.26,
                 'allowance_top_up': 46.39,
                 'allowance_max': 1343.94,
+                'gis_single_threshold': 21456.0,  # Income threshold for single, widowed or divorced
+                'gis_couple_threshold': 28320.0,  # Income threshold for couple with full OAS pension
+                'allowance_threshold': 39648.0,   # Income threshold when spouse receives Allowance
             },
             'oas_recovery_threshold': 86912.0,  # OAS Recovery Threshold
             'oas_recovery_rate': 0.15,  # OAS Recovery Rate
             'gis_work_deduction': 5000.0,  # GIS Work Deduction
             'gis_partial_work_income_exemption': 5000.0,  # GIS Partial Work Exemption
             'gis_partial_work_income_rate': 0.5,  # GIS Partial Work Deduction
-            'gis_single_threshold': ???.0,  # GIS Single Threshold
-            'gis_couple_threshold': 28512.0,  # GIS Single Threshold
-            'allowance_threshold': 39168.0,  # Allowance Threshold
-
-            
         }
     }
 
