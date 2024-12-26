@@ -127,8 +127,6 @@ class PythonTaxCalculator(BaseTaxCalculator):
             'total': 0.0,
         }
 
-        
-
         # Total contributions
         adult1 = (
             employment_insurance["adult1"]

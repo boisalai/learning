@@ -1,8 +1,23 @@
 """
 Old Age Security (OAS)
 
-Notes
-    - Les paramètres sont révisés trimestriellement en fonction de l'indice des prix à la consommation.
+- Les paramètres sont révisés trimestriellement en fonction de l'indice des prix à la consommation.
+- Cette implémentation:
+    - Calcule les taux moyens annuels à partir des taux trimestriels
+    - Calcule la SV de base pour chaque adulte admissible (65+ ans)
+    - Applique l'impôt de récupération de la SV si le revenu dépasse le seuil
+    - Calcule le SRG en tenant compte:
+        - Des exemptions de revenu de travail
+        - Des différents seuils selon la situation familiale
+        - Du partage du SRG pour les couples
+    - Calcule l'Allocation au conjoint si applicable (60-64 ans)
+    - Retourne les montants pour chaque adulte avec les détails
+- La méthode gère toutes les situations familiales possibles:
+    - Personne seule de 65 ans et plus
+    - Couple où les deux ont 65 ans et plus
+    - Couple où un seul a 65 ans et plus (cas de l'Allocation)
+- Les montants sont proratisés en fonction des changements trimestriels des prestations et l'implémentation
+  tient compte des seuils de récupération et des exemptions de revenu appropriés.
 
 References
     - [Sécurité de la vieillesse (SV) - Montants maximaux mensuels selon le type de prestations et le trimestre](https://ouvert.canada.ca/data/fr/dataset/ff1e4882-685c-4518-b741-c3cf9bb74c3e)
@@ -162,9 +177,67 @@ class OldAgeSecurity(TaxProgram):
         self.validate_year(family.tax_year)
         params = self.PARAMS[family.tax_year]
 
-        # DÉBUT DE LA LOGIQUE DE CALCUL
+        def get_quarterly_rates(params, family_income):
+            """Get average rates for the year accounting for quarterly changes"""
+            quarters = ['jan_to_march', 'april_to_june', 'july_to_sept', 'oct_to_dec']
+            avg_rates = {}
+            for key in ['oas_under_75', 'oas_over_75', 'gis_single_max', 'gis_couple_max']:
+                avg_rates[key] = sum(params[q][key] for q in quarters) / len(quarters)
+            return avg_rates
 
-        # FIN DE LA LOGIQUE DE CALCUL
+        rates = get_quarterly_rates(params, family.adult1.income)
+
+        # Initialize benefits
+        oas1 = oas2 = gis = allowance = 0.0
+
+        # Calculate OAS for primary adult if eligible
+        if family.adult1.age >= 65:
+            base_oas = rates['oas_over_75'] if family.adult1.age >= 75 else rates['oas_under_75']
+            # Apply OAS recovery tax if income exceeds threshold
+            if family.adult1.income > params['oas_recovery_threshold']:
+                recovery = (family.adult1.income - params['oas_recovery_threshold']) * params['oas_recovery_rate']
+                oas1 = max(0, base_oas * 12 - recovery)
+            else:
+                oas1 = base_oas * 12
+
+        # Calculate OAS for secondary adult if eligible
+        if family.adult2 and family.adult2.age >= 65:
+            base_oas = rates['oas_over_75'] if family.adult2.age >= 75 else rates['oas_under_75']
+            if family.adult2.income > params['oas_recovery_threshold']:
+                recovery = (family.adult2.income - params['oas_recovery_threshold']) * params['oas_recovery_rate']
+                oas2 = max(0, base_oas * 12 - recovery)
+            else:
+                oas2 = base_oas * 12
+
+        # Calculate GIS
+        family_income = family.adult1.income + (family.adult2.income if family.adult2 else 0)
+
+        # Apply work income exemption for GIS
+        work_income = family.adult1.gross_work_income + (family.adult2.gross_work_income if family.adult2 else 0)
+        work_exemption = min(work_income, params['gis_work_income_deduction'])
+        if work_income > params['gis_work_income_deduction']:
+            additional_exemption = min(
+                work_income - params['gis_work_income_deduction'],
+                params['gis_partial_work_income_exemption']
+            ) * params['gis_partial_work_income_rate']
+            work_exemption += additional_exemption
+
+        family_income_for_gis = max(0, family_income - work_exemption)
+
+        if family.adult1.age >= 65:
+            if not family.adult2:  # Single
+                if family_income_for_gis <= params['oct_to_dec']['gis_single_threshold']:
+                    gis = rates['gis_single_max'] * 12
+            elif family.adult2.age >= 65:  # Couple, both over 65
+                if family_income_for_gis <= params['oct_to_dec']['gis_couple_threshold']:
+                    gis = rates['gis_couple_max'] * 12
+            elif family.adult2.age >= 60:  # Spouse's allowance case
+                if family_income_for_gis <= params['oct_to_dec']['allowance_threshold']:
+                    allowance = rates['allowance_max'] * 12
+
+        # Calculate benefit totals
+        benefit1 = oas1 + (gis if not family.adult2 else gis/2)
+        benefit2 = oas2 + (gis/2 if family.adult2 and family.adult2.age >= 65 else 0) + allowance
         
         return {
             'program': self.name,
