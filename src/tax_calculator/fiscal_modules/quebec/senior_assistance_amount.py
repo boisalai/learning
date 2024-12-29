@@ -1,8 +1,9 @@
 """
 Senior Assistance Amount
 
-Parameters
-    https://cffp.recherche.usherbrooke.ca/outils-ressources/guide-mesures-fiscales/allocation-famille/#:~:text=Le%20seuil%20du%20revenu%20familial,de%20r%C3%A9duction%20est%20de%204%20%25.
+References
+    - https://www.revenuquebec.ca/fr/citoyens/credits-dimpot/credit-dimpot-pour-soutien-aux-aines/
+    - https://cffp.recherche.usherbrooke.ca/outils-ressources/guide-mesures-fiscales/allocation-famille/#:~:text=Le%20seuil%20du%20revenu%20familial,de%20r%C3%A9duction%20est%20de%204%20%25.
 """
 
 from typing import Dict, List, Any

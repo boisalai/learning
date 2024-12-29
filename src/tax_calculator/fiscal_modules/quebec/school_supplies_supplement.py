@@ -1,8 +1,9 @@
 """
 School Supplies Supplement
 
-Parameters
-    https://cffp.recherche.usherbrooke.ca/outils-ressources/guide-mesures-fiscales/allocation-famille/#:~:text=Le%20seuil%20du%20revenu%20familial,de%20r%C3%A9duction%20est%20de%204%20%25.
+References
+    - https://www.rrq.gouv.qc.ca/fr/enfants/Pages/supplement-achat-fournitures-scolaires.aspx
+    - https://www.rcgt.com/fr/planiguide/modules/module-02-lindividu-et-la-famille/aide-aux-parents/
 """
 
 from typing import Dict, List, Any

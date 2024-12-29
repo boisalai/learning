@@ -1,8 +1,9 @@
 """
 Medical Expenses Credit
 
-Parameters
-    https://cffp.recherche.usherbrooke.ca/outils-ressources/guide-mesures-fiscales/allocation-famille/#:~:text=Le%20seuil%20du%20revenu%20familial,de%20r%C3%A9duction%20est%20de%204%20%25.
+References
+    - https://www.revenuquebec.ca/fr/citoyens/declaration-de-revenus/produire-votre-declaration-de-revenus/comment-remplir-votre-declaration/aide-par-ligne/451-a-480-remboursement-ou-solde-a-payer/ligne-462/point-1/
+    
 """
 
 from typing import Dict, List, Any
