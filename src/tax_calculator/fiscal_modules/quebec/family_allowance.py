@@ -5,7 +5,7 @@ A non-taxable refundable tax credit provided to Quebec families with children un
 The allowance includes a universal base amount plus additional support for low and
 middle-income families.
 
-References
+References:
     - https://www.rrq.gouv.qc.ca/fr/programmes/soutien_enfants/paiement/Pages/montant.aspx
     - https://cffp.recherche.usherbrooke.ca/outils-ressources/guide-mesures-fiscales/allocation-famille/
     - https://www.rcgt.com/fr/planiguide/modules/module-02-lindividu-et-la-famille/aide-aux-parents/
@@ -57,12 +57,6 @@ class FamilyAllowance(TaxProgram):
                     }
                 }
             },
-            'school_supplies': {
-                'amount': 121,
-                'min_age': 4,
-                'max_age': 16,
-                'reference_date': '09-30'  # September 30th
-            },
             'disability': {
                 'base': {
                     'monthly': 229,
@@ -76,6 +70,50 @@ class FamilyAllowance(TaxProgram):
                     'tier2': {
                         'monthly': 770,
                         'annual': 9240
+                    }
+                }
+            }
+        },
+        2023: {
+            'base_amounts': {
+                'couple': {
+                    'per_child': {
+                        'max': 2782,
+                        'min': 1106
+                    },
+                    'reduction': {
+                        'threshold': 55054,
+                        'rate': 0.04
+                    }
+                },
+                'single_parent': {
+                    'per_child': {
+                        'max': 2782,
+                        'min': 1106
+                    },
+                    'supplement': {
+                        'max': 977,
+                        'min': 389
+                    },
+                    'reduction': {
+                        'threshold': 40127,
+                        'rate': 0.04
+                    }
+                }
+            },
+            'disability': {
+                'base': {
+                    'monthly': 218,
+                    'annual': 2616
+                },
+                'exceptional_care': {
+                    'tier1': {
+                        'monthly': 1102,
+                        'annual': 13224
+                    },
+                    'tier2': {
+                        'monthly': 733,
+                        'annual': 8796
                     }
                 }
             }
@@ -102,8 +140,8 @@ class FamilyAllowance(TaxProgram):
             return 0
         return sum(1 for child in family.children if child.age < 18)
 
-    def _calculate_base_amount(self, family: Family, family_income: float, params: dict) -> float:
-        """Calculate base amount before reductions."""
+    def calculate_base_amount(self, family: Family, family_income: float, params: dict) -> float:
+        """Calculate base amount before any supplements."""
         base_params = self._get_base_parameters(family, params)
         num_children = self._count_eligible_children(family)
         
@@ -137,20 +175,8 @@ class FamilyAllowance(TaxProgram):
 
         return base_amount
 
-    def _calculate_school_supplies(self, family: Family, params: dict) -> float:
-        """Calculate school supplies supplement."""
-        if not family.children:
-            return 0.0
-            
-        eligible_children = sum(
-            1 for child in family.children
-            if params['school_supplies']['min_age'] <= child.age <= params['school_supplies']['max_age']
-        )
-        
-        return eligible_children * params['school_supplies']['amount']
-
     def _calculate_disability_supplement(self, family: Family, params: dict) -> Dict[str, float]:
-        """Calculate disability supplements."""
+        """Calculate disability and exceptional care supplements."""
         if not family.children:
             return {'base': 0.0, 'exceptional': 0.0}
             
@@ -175,22 +201,16 @@ class FamilyAllowance(TaxProgram):
             'exceptional': exceptional_amount
         }
 
-    def calculate(self, family: Family) -> Dict[str, float]:
+    def calculate(self, family: Family, family_net_income: float) -> Dict[str, float]:
         """Calculate family allowance amounts."""
         self.validate_year(family.tax_year)
         params = self.PARAMS[family.tax_year]
 
-        # Calculate family income
-        family_income = family.adult1.income
-        if family.adult2:
-            family_income += family.adult2.income
-
         # Calculate components
-        base_amount = self._calculate_base_amount(family, family_income, params)
-        school_supplies = self._calculate_school_supplies(family, params)
+        base_amount = self.calculate_base_amount(family, family_net_income, params)
         disability = self._calculate_disability_supplement(family, params)
         
-        total = base_amount + school_supplies + disability['base'] + disability['exceptional']
+        total = base_amount + disability['base'] + disability['exceptional']
 
         # For shared custody, split 50-50
         if getattr(family, 'shared_custody', False):
@@ -207,9 +227,8 @@ class FamilyAllowance(TaxProgram):
             'adult2': round(adult2_share, 2),
             'total': round(total, 2),
             'details': {
-                'family_income': family_income,
+                'family_income': family_net_income,
                 'base_amount': base_amount,
-                'school_supplies': school_supplies,
                 'disability_base': disability['base'],
                 'disability_exceptional': disability['exceptional']
             }
@@ -260,7 +279,7 @@ def chart():
             else:
                 family.adult1.gross_work_income = income
             
-            result = allowance.calculate(family)
+            result = allowance.calculate(family, income)
             allowances.append(result['total'])
             
         plt.plot(incomes, allowances, label=label, linewidth=2)
@@ -327,11 +346,12 @@ if __name__ == '__main__':
     
     for case in test_cases:
         print(f"\nScenario: {case['name']}")
-        result = calculator.calculate(case['family'])
+        family_income = case['family'].adult1.gross_work_income
+        if case['family'].adult2:
+            family_income += case['family'].adult2.gross_work_income
+        result = calculator.calculate(case['family'], family_income)
         print(f"Family Income: ${result['details']['family_income']:,.2f}")
         print(f"Base Amount: ${result['details']['base_amount']:,.2f}")
-        if result['details']['school_supplies'] > 0:
-            print(f"School Supplies: ${result['details']['school_supplies']:,.2f}")
         if result['details']['disability_base'] > 0:
             print(f"Disability Supplement: ${result['details']['disability_base']:,.2f}")
         if result['details']['disability_exceptional'] > 0:
