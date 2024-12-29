@@ -15,6 +15,9 @@ from tax_calculator.core import TaxProgram, Family, FamilyStatus, AdultInfo, Chi
 
 
 class CanadaChildBenefit(TaxProgram):
+    def get_parameters(self, year):
+
+
     PARAMS = {
         2024: {
             'max_amount': {
@@ -99,14 +102,6 @@ class CanadaChildBenefit(TaxProgram):
             }
         }
     }
-
-    @property
-    def name(self) -> str:
-        return "Canada Child Benefit"
-
-    @property
-    def supported_years(self) -> List[int]:
-        return list(self.PARAMS.keys())
 
     def _calculate_base_benefit(self, family: Family, params: dict) -> float:
         """Calculate base benefit amount before reductions"""

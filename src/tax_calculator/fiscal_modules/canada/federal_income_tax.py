@@ -19,190 +19,193 @@ TODO:
     - Voir https://www.taxtips.ca/taxrates/canada.htm
 """
 
-from typing import Dict, List, Any
-from tax_calculator.core import TaxProgram, Family, FamilyStatus, AdultInfo, ChildInfo
+from typing import Dict, List
+from tax_calculator.core import TaxProgram, Family, FamilyStatus, AdultInfo, ChildInfo, generate_standard_test_cases
 
-
-class FederalIncomeTaxCalculator(TaxProgram):
-    def __init__(self, year, employment_income, pension_income, other_income=0):
-        self.year = year
-        self.employment_income = employment_income
-        self.pension_income = pension_income
-        self.other_income = other_income
-        self.params = self.get_parameters(year)
-
-    def get_parameters(self, year):
-        if year == 2025:
-            return {
-                'brackets': [
-                    (57375, 0.15),
-                    (114750, 0.205),
-                    (177882, 0.26),
-                    (253414, 0.29),
-                    (float('inf'), 0.33)
-                ],
-                'basic_personal_amount': 15569
-            }
-        elif year == 2024:
-            return {
-                'brackets': [
-                    (55867, 0.15),
-                    (111733, 0.205),
-                    (173205, 0.26),
-                    (246752, 0.29),
-                    (float('inf'), 0.33),
-                ],
-                'basic_personal_max_amount': 15705.0,
-                'basic_personal_min_amount': 14156.0,
-                'basic_personal_reduction_threshold': 173205.0,
-                'basic_personal_reduction_rate': 0.05,
-                'medical_expenses_rate': 0.03,
-                'medical_expenses_max': 2759.0,
-                'age_amount': 8790.0,
-            }
-        elif year == 2023:
-            return {
-                'brackets': [
-                    (53359, 0.15),
-                    (106717, 0.205),
-                    (165430, 0.26),
-                    (235675, 0.29),
-                    (float('inf'), 0.33)
-                ],
-                'basic_personal_max_amount': 15000.0,
-                'basic_personal_min_amount': 13520.0,
-                'basic_personal_reduction_threshold': 172000.0,
-                'basic_personal_reduction_rate': 0.05,
-                'medical_expenses_rate': 0.03,
-                'medical_expenses_max': 2635.0,
-                'age_amount': 8396.0,
-            }
-        else:
-            raise ValueError("Year not supported")
-
-    def calculate_total_income(self):
-        return self.employment_income + self.pension_income + self.other_income
-
-    def calculate_net_income(self):
-        # Assume no deductions for simplicity
-        return self.calculate_total_income()
-
-    def calculate_taxable_income(self):
-        # Assume no further deductions for simplicity
-        return self.calculate_net_income()
-
-    def calculate_federal_tax(self):
-        taxable_income = self.calculate_taxable_income()
-        brackets = self.params['brackets']
-        tax = 0
-        remaining = taxable_income
-        for bracket in brackets:
-            threshold, rate = bracket
-            if remaining > threshold:
-                tax += (threshold - sum(b[0] for b in brackets[:brackets.index(bracket)])) * rate
-                remaining -= threshold
-            else:
-                prev_threshold = brackets[brackets.index(bracket)-1][0] if brackets.index(bracket) > 0 else 0
-                tax += (remaining - prev_threshold) * rate
-                break
-        return tax
-
-    def calculate_net_federal_tax(self):
-        federal_tax = self.calculate_federal_tax()
-        credits = self.params['basic_personal_amount']
-        return max(0, federal_tax - credits)
+class FederalIncomeTax(TaxProgram):
+    PARAMS = {
+        2025: {
+            'brackets': [
+                (57375, 0.15),
+                (114750, 0.205),
+                (177882, 0.26),
+                (253414, 0.29),
+                (float('inf'), 0.33)
+            ],
+            'basic_personal_amount': 15569
+        },
+        2024: {
+            'brackets': [
+                (55867, 0.15),
+                (111733, 0.205),
+                (173205, 0.26),
+                (246752, 0.29),
+                (float('inf'), 0.33),
+            ],
+            'basic_personal_max_amount': 15705.0,
+            'basic_personal_min_amount': 14156.0,
+            'basic_personal_reduction_threshold': 173205.0,
+            'basic_personal_reduction_rate': 0.05,
+            'medical_expenses_rate': 0.03,
+            'medical_expenses_max': 2759.0,
+            'age_amount': 8790.0,
+        },
+        2023: {
+            'brackets': [
+                (53359, 0.15),
+                (106717, 0.205),
+                (165430, 0.26),
+                (235675, 0.29),
+                (float('inf'), 0.33)
+            ],
+            'basic_personal_max_amount': 15000.0,
+            'basic_personal_min_amount': 13520.0,
+            'basic_personal_reduction_threshold': 172000.0,
+            'basic_personal_reduction_rate': 0.05,
+            'medical_expenses_rate': 0.03,
+            'medical_expenses_max': 2635.0,
+            'age_amount': 8396.0,
+        }
+    }
 
     @property
-    def calculate(self, family: Family) -> Dict[str, float]: 
-        total_income = self.calculate_total_income()
-        net_income = self.calculate_net_income()
-        taxable_income = self.calculate_taxable_income()
-        federal_tax = self.calculate_federal_tax()
-        credits = self.params['basic_personal_amount']
-        net_tax = self.calculate_net_federal_tax()
+    def name(self) -> str:
+        return "Federal Income Tax"
+
+    @property
+    def supported_years(self) -> List[int]:
+        return list(self.PARAMS.keys())
+
+    def calculate_federal_tax(self, taxable_income: float, brackets: List[tuple]) -> float:
+        """Calculate federal tax using progressive tax brackets"""
+        tax = 0
+        remaining = taxable_income
+        
+        for i, (threshold, rate) in enumerate(brackets):
+            if i == 0:
+                taxable_in_bracket = min(remaining, threshold)
+            else:
+                previous_threshold = brackets[i-1][0]
+                taxable_in_bracket = min(remaining, threshold - previous_threshold)
+            
+            if taxable_in_bracket <= 0:
+                break
+                
+            tax += taxable_in_bracket * rate
+            remaining -= taxable_in_bracket
+            
+        return tax
+
+    def calculate_basic_personal_amount(self, net_income: float, params: dict) -> float:
+        """Calculate basic personal amount based on income thresholds"""
+        if net_income <= params['basic_personal_reduction_threshold']:
+            return params['basic_personal_max_amount']
+        elif net_income >= params['basic_personal_max_amount']:
+            return params['basic_personal_min_amount']
+        else:
+            reduction = ((net_income - params['basic_personal_reduction_threshold']) 
+                        * params['basic_personal_reduction_rate'])
+            return max(
+                params['basic_personal_min_amount'],
+                params['basic_personal_max_amount'] - reduction
+            )
+
+    def calculate(self, family: Family) -> Dict[str, float]:
+        """Calculate federal income tax for a family"""
+        self.validate_year(family.tax_year)
+        params = self.PARAMS[family.tax_year]
+        
+        # Calculate total and taxable income for each adult
+        def calculate_for_adult(adult: AdultInfo) -> tuple:
+            if not adult:
+                return 0.0, 0.0, 0.0
+                
+            total_income = adult.gross_work_income + adult.gross_retirement_income
+            # For simplicity, assume net income equals total income
+            net_income = total_income
+            # For simplicity, assume taxable income equals net income
+            taxable_income = net_income
+            
+            return total_income, net_income, taxable_income
+
+        # Calculate for primary adult
+        total_income1, net_income1, taxable_income1 = calculate_for_adult(family.adult1)
+        
+        # Calculate for secondary adult if present
+        total_income2, net_income2, taxable_income2 = calculate_for_adult(family.adult2)
+
+        # Calculate federal tax for each adult
+        federal_tax1 = self.calculate_federal_tax(taxable_income1, params['brackets'])
+        federal_tax2 = self.calculate_federal_tax(taxable_income2, params['brackets'])
+        
+        # Calculate basic personal amount for each adult
+        credits1 = self.calculate_basic_personal_amount(net_income1, params) if net_income1 > 0 else 0
+        credits2 = self.calculate_basic_personal_amount(net_income2, params) if net_income2 > 0 else 0
+        
+        # Apply credits and calculate final tax
+        net_tax1 = max(0, federal_tax1 - (credits1 * params['brackets'][0][1]))
+        net_tax2 = max(0, federal_tax2 - (credits2 * params['brackets'][0][1]))
+
+        tax1 = -1 * round(net_tax1, 2)  # Negative because it's a deduction
+        tax2 = -1 * round(net_tax2, 2)  # Negative because it's a deduction
         
         return {
-            "program": "Federal Income Tax",
-            "tax_year": self.year,
-            "total": net_tax,
+            "program": self.name,
+            "tax_year": family.tax_year,
+            "adult1": tax1,
+            "adult2": tax2,
+            "total": tax1 + tax2,
             "details": {
-                "total_income": total_income,
-                "net_income": net_income,
-                "taxable_income": taxable_income,
-                "federal_tax": federal_tax,
-                "credits": credits
+                "total_income1": total_income1,
+                "net_income1": net_income1,
+                "taxable_income1": taxable_income1,
+                "federal_tax1": federal_tax1,
+                "credits1": credits1,
+                "total_income2": total_income2,
+                "net_income2": net_income2,
+                "taxable_income2": taxable_income2,
+                "federal_tax2": federal_tax2,
+                "credits2": credits2
             }
         }
 
 
 if __name__ == "__main__":
-    # Création d'un objet Family pour respecter l'interface (à définir selon vos besoins)
-    class Family:
-        def __init__(self, employment_income: float, pension_income: float, other_income: float = 0):
-            self.employment_income = employment_income
-            self.pension_income = pension_income
-            self.other_income = other_income
-
-    # Créer quelques exemples de calcul
-    test_cases = [
-        {
-            "year": 2024,
-            "employment_income": 75000,
-            "pension_income": 0,
-            "other_income": 0
-        },
-        {
-            "year": 2024,
-            "employment_income": 120000,
-            "pension_income": 15000,
-            "other_income": 5000
-        },
-        {
-            "year": 2023,
-            "employment_income": 50000,
-            "pension_income": 25000,
-            "other_income": 2000
-        }
-    ]
-
-    # Tester chaque cas
-    for test in test_cases:
-        print(f"\nTest pour l'année {test['year']} avec :")
-        print(f"- Revenu d'emploi : {test['employment_income']}$")
-        print(f"- Revenu de pension : {test['pension_income']}$")
-        print(f"- Autres revenus : {test['other_income']}$")
-        print("-" * 50)
-
-        # Créer l'objet Family
-        family = Family(
-            employment_income=test['employment_income'],
-            pension_income=test['pension_income'],
-            other_income=test['other_income']
-        )
-
-        # Créer et utiliser le calculateur
-        calculator = FederalIncomeTaxCalculator(
-            year=test['year'],
-            employment_income=test['employment_income'],
-            pension_income=test['pension_income'],
-            other_income=test['other_income']
-        )
-
-        # Calculer l'impôt
+    # Create calculator instance
+    calculator = FederalIncomeTax()
+    
+    # Generate and run standard test cases
+    test_cases = generate_standard_test_cases()
+    
+    print("\nRunning standard test cases for Federal Income Tax Calculator")
+    print("=" * 80)
+    
+    for i, family in enumerate(test_cases, 1):
+        print(f"\nTest Case #{i}:")
+        print(f"Family Status: {family.family_status.name}")
+        print(f"Adult 1: Age {family.adult1.age}, Work Income ${family.adult1.gross_work_income:,.2f}, "
+              f"Retirement Income ${family.adult1.gross_retirement_income:,.2f}")
+        
+        if family.adult2:
+            print(f"Adult 2: Age {family.adult2.age}, Work Income ${family.adult2.gross_work_income:,.2f}, "
+                  f"Retirement Income ${family.adult2.gross_retirement_income:,.2f}")
+            
+        if family.children:
+            print(f"Number of children: {len(family.children)}")
+            for j, child in enumerate(family.children, 1):
+                print(f"Child {j}: Age {child.age}")
+                
         results = calculator.calculate(family)
-
-        # Afficher les résultats
-        print("\nRésultats détaillés :")
-        print(f"Programme : {results['program']}")
-        print(f"Année fiscale : {results['tax_year']}")
-        print("\nDétails des calculs :")
+        print("\nResults:")
+        print(f"Adult 1 Federal Tax: ${abs(results['adult1']):,.2f}")
+        if family.adult2:
+            print(f"Adult 2 Federal Tax: ${abs(results['adult2']):,.2f}")
+        print(f"Total Federal Tax: ${abs(results['total']):,.2f}")
+        print("\nDetails:")
         for key, value in results['details'].items():
-            print(f"{key.replace('_', ' ').title()} : {value:,.2f}$")
-        print(f"\nImpôt fédéral total à payer : {results['total']:,.2f}$")
-        print("=" * 50)
-
-
-
+            if isinstance(value, (int, float)):
+                print(f"{key.replace('_', ' ').title()}: ${value:,.2f}")
+        print("-" * 80)
 
 """
 // Étape 2 – Revenu total

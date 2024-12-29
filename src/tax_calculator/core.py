@@ -182,10 +182,6 @@ class TaxProgram(ABC):
     Abstract base class for all tax programs.
     All fiscal programs (taxes, contributions, benefits) must inherit from this class.
     """
-    
-    @abstractmethod
-    def get_parameters(self, year: int):
-        pass
 
     @abstractmethod
     def calculate(self, family: Family) -> Dict[str, float]:
@@ -203,6 +199,26 @@ class TaxProgram(ABC):
             - details: Dictionary of detailed amounts
         """
         pass
+    
+    @property
+    @abstractmethod
+    def name(self) -> str:
+        """Program name"""
+        pass
+    
+    @property
+    @abstractmethod
+    def supported_years(self) -> List[int]:
+        """List of supported tax years"""
+        pass
+
+    def validate_year(self, year: int) -> None:
+        """Validate if tax year is supported"""
+        if year not in self.supported_years:
+            raise ValueError(
+                f"Tax year {year} not supported for {self.name}. "
+                f"Supported years: {sorted(self.supported_years)}"
+            )
 
 class BaseTaxCalculator(ABC):
     """
