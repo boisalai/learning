@@ -16,7 +16,8 @@ def generate_markdown(directory, output_file):
                     md_file.write(f"================================================\n")
                     with open(file_path, 'r') as py_file:
                         md_file.write(py_file.read())
-    
+
+
 if __name__ == "__main__":
     project_directory = "/Users/alain/Workspace/GitHub/Learning/src/tax_calculator"
     output_markdown_file = "/Users/alain/Downloads/python_scripts.md"
