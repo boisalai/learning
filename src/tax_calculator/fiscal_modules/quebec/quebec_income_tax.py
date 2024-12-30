@@ -5,6 +5,7 @@ Parameters reference:
     - https://www.revenuquebec.ca/fr/citoyens/declaration-de-revenus/
     - https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/finances/publications-adm/parametres/AUTFR_RegimeImpot2025.pdf
     - https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/finances/publications-adm/parametres/AUTFR_RegimeImpot2024.pdf
+    - https://cffp.recherche.usherbrooke.ca/outils-ressources/guide-mesures-fiscales/
 """
 
 from typing import Dict, List, Any
