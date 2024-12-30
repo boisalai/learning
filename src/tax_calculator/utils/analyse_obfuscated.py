@@ -34,10 +34,14 @@ def extract_dependencies(js_code, target_var):
             return
         seen_vars.add(var)
 
+        # Ajouter un pattern pour les initialisations de tableaux
+        array_pattern = rf"var\s+({re.escape(var)})\s*=\s*new\s+Array\([^;]+\);"
+        
         patterns = [
             (rf"(?:var\s+)?{re.escape(var)}\s*=\s*([^;]+);", False),
             (rf"{re.escape(var)}\[[^\]]+\]\s*=\s*([^;]+);", True),
-            (rf"{re.escape(var)}\s*=\s*([^;]+);", False)
+            (rf"{re.escape(var)}\s*=\s*([^;]+);", False),
+            (array_pattern, False)  # Nouveau pattern
         ]
 
         for pattern, is_array in patterns:
@@ -48,6 +52,10 @@ def extract_dependencies(js_code, target_var):
                     instructions.append(definition)
 
                 vars_used = re.findall(r'[a-zA-Z][a-zA-Z0-9_]+(?:\[[^\]]+\])*', match.group(1))
+                # Ajouter la recherche dans les initialisations de tableaux
+                array_vars = re.findall(r'[a-zA-Z][a-zA-Z0-9_]+', match.group(0))
+                vars_used.extend(array_vars)
+
                 for v in vars_used:
                     if any(v.startswith(p) for p in ('c1', 'c2', 'c4', 'arr', 'sum', 'tmp')):
                         find_definition(v)
