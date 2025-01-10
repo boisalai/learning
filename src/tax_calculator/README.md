@@ -2,6 +2,10 @@
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
+<!--
+See https://github.com/chonkie-ai/chonkie
+-->
+
 ## Objectifs
 
 - Déveloper le code python pour tous les programmes socio-fiscaux du Québec et du Canada en 2023 et 2024.
@@ -59,4 +63,6 @@ Learning/
   - (OK) Régime d'assurance médicaments du Québec
 - **Frais de garde**
 
+## See also
 
+- https://ici.radio-canada.ca/nouvelle/2128404/changement-finance-portefeuille-2025

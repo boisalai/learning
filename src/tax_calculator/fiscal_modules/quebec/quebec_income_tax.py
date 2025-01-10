@@ -30,6 +30,7 @@ class DependentDetails:
 class QuebecIncomeTax(TaxProgram):
     PARAMS = {
         2025: {
+            # Crédit d’impôt pour solidarité pour une personne vivant seule : 1255 $ (+ 34 $)
             'brackets': [
                 (53255, 0.14),
                 (106495, 0.19),

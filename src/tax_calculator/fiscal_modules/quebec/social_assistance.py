@@ -15,6 +15,9 @@ class SocialAssistance(TaxProgram):
     """Quebec Social Assistance Program calculator"""
     
     PARAMS = {
+        2025: {
+            # Aide sociale de base pour une personne seule : 9404 $ (+ 260 $)
+        },
         2024: {
             'aide_sociale': {  # Regular social assistance
                 'single_adult': {

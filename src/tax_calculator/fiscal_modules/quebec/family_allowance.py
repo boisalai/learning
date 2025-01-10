@@ -18,6 +18,9 @@ class FamilyAllowance(TaxProgram):
     """Calculator for Quebec Family Allowance."""
     
     PARAMS = {
+        2025: {
+            # Allocations familiales : le montant annuel maximal par enfant sera de 3006 $ (+ 83 $)
+        },
         2024: {
             'base_amounts': {
                 'couple': {
