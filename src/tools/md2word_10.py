@@ -146,40 +146,9 @@ class MarkdownToDocxConverter:
     def _run_pandoc_conversion(self, input_path: Path, output_path: Path, title: str) -> None:
         """Run pandoc conversion with custom heading levels mapping"""
         try:
-            # Créer un fichier temporaire pour la configuration de Lua
-            lua_script = """
-    function Header(el)
-        -- Adjust heading level to match requirements:
-        -- ## (level 2) becomes Heading 1
-        -- ### (level 3) becomes Heading 2
-        -- #### (level 4) becomes Heading 3
-        if el.level > 1 then
-            el.level = el.level - 1
-        end
-        return el
-    end
-    """
-            lua_path = input_path.parent / "adjust_headers.lua"
-            with open(lua_path, 'w', encoding='utf-8') as f:
-                f.write(lua_script)
-
-            cmd = [
-                'pandoc',
-                str(input_path),
-                '-o', str(output_path),
-                '-f', 'markdown',
-                '-t', 'docx',
-                '--wrap=none',
-                '--columns=999',
-                '--lua-filter=' + str(lua_path),
-                '-M', f'title={title}',
-                '-M', f'author={self.config.author}',
-                '-M', f'date={self.config.date}'
-            ]
+            lua_path = self._create_lua_script(input_path)
+            cmd = self._build_pandoc_command(input_path, output_path, title, lua_path)
             
-            if self.config.generate_toc:
-                cmd.extend(['--toc', '--number-sections'])
-                
             try:
                 result = subprocess.run(cmd, check=True, capture_output=True, text=True)
                 print("Pandoc conversion completed successfully")
@@ -187,16 +156,55 @@ class MarkdownToDocxConverter:
                 print(f"Pandoc conversion failed: {e.stderr}")
                 raise
             finally:
-                # Nettoyer le fichier temporaire
-                try:
-                    if lua_path.exists():
-                        lua_path.unlink()
-                except Exception as e:
-                    print(f"Warning: Could not delete temporary Lua file: {e}")
+                self._cleanup_lua_script(lua_path)
                     
         except Exception as e:
             print(f"Error during pandoc conversion: {str(e)}")
             raise
+
+    def _create_lua_script(self, input_path: Path) -> Path:
+        """Create a temporary Lua script for pandoc"""
+        lua_script = """
+        function Header(el)
+            if el.level > 1 then
+                el.level = el.level - 1
+            end
+            return el
+        end
+        """
+        lua_path = input_path.parent / "adjust_headers.lua"
+        with open(lua_path, 'w', encoding='utf-8') as f:
+            f.write(lua_script)
+        return lua_path
+
+    def _build_pandoc_command(self, input_path: Path, output_path: Path, title: str, lua_path: Path) -> List[str]:
+        """Build the pandoc command"""
+        cmd = [
+            'pandoc',
+            str(input_path),
+            '-o', str(output_path),
+            '-f', 'markdown',
+            '-t', 'docx',
+            '--wrap=none',
+            '--columns=999',
+            '--lua-filter=' + str(lua_path),
+            '-M', f'title={title}',
+            '-M', f'author={self.config.author}',
+            '-M', f'date={self.config.date}'
+        ]
+        
+        if self.config.generate_toc:
+            cmd.extend(['--toc', '--number-sections'])
+        
+        return cmd
+
+    def _cleanup_lua_script(self, lua_path: Path) -> None:
+        """Cleanup the temporary Lua script"""
+        try:
+            if lua_path.exists():
+                lua_path.unlink()
+        except Exception as e:
+            print(f"Warning: Could not delete temporary Lua file: {e}")
 
     def convert(self, 
                 input_file: str,
@@ -204,54 +212,61 @@ class MarkdownToDocxConverter:
                 working_dir: Optional[str] = None,
                 extra_args: Optional[List[str]] = None) -> None:
         """Convert Markdown to Word"""
-        # Set working directory
-        work_dir = Path(working_dir).resolve() if working_dir else Path.cwd()
-        input_path = work_dir / input_file
-        output_path = work_dir / output_file
+        work_dir, input_path, output_path = self._setup_paths(input_file, output_file, working_dir)
         
         if not input_path.exists():
             raise FileNotFoundError(f"Input file not found: {input_path}")
         
-        # Create image directory if needed
+        img_dir = self._create_image_directory(work_dir)
+        
+        content = self._read_markdown_content(input_path)
+        
+        document_title = self._extract_title_from_markdown(content)
+        image_refs = self._extract_image_references(content)
+        
+        temp_md = self._create_temp_markdown(content, work_dir, input_path)
+        
+        try:
+            self._run_pandoc_conversion(temp_md, output_path, document_title)
+            self._post_process_document(output_path, document_title)
+            self._insert_images(output_path, image_refs, work_dir)
+            print(f"Conversion successful! File saved: {output_path}")
+        finally:
+            self._cleanup_temp_markdown(temp_md)
+
+    def _setup_paths(self, input_file: str, output_file: str, working_dir: Optional[str]) -> Tuple[Path, Path, Path]:
+        """Setup paths for input and output files"""
+        work_dir = Path(working_dir).resolve() if working_dir else Path.cwd()
+        input_path = work_dir / input_file
+        output_path = work_dir / output_file
+        return work_dir, input_path, output_path
+
+    def _create_image_directory(self, work_dir: Path) -> Path:
+        """Create image directory if needed"""
         img_dir = work_dir / "img"
         if not img_dir.exists():
             img_dir.mkdir(parents=True)
             print(f"Created image directory: {img_dir}")
-        
-        # Read markdown content
+        return img_dir
+
+    def _read_markdown_content(self, input_path: Path) -> str:
+        """Read markdown content from file"""
         with open(input_path, 'r', encoding='utf-8') as f:
-            content = f.read()
-        
-        # Extract title and image references
-        document_title = self._extract_title_from_markdown(content)
-        image_refs = self._extract_image_references(content)
-        
-        # Create temporary markdown without images
+            return f.read()
+
+    def _create_temp_markdown(self, content: str, work_dir: Path, input_path: Path) -> Path:
+        """Create temporary markdown without images"""
         temp_content = self._remove_image_references(content)
         temp_md = work_dir / f"temp_{input_path.name}"
-        
-        try:
-            # Write temporary markdown
-            with open(temp_md, 'w', encoding='utf-8') as f:
-                f.write(temp_content)
-            
-            # Run pandoc conversion
-            self._run_pandoc_conversion(temp_md, output_path, document_title)
-            
-            # Post-process the document
-            self._post_process_document(output_path, document_title)
-            
-            # Insert images
-            self._insert_images(output_path, image_refs, work_dir)
-            
-            print(f"Conversion successful! File saved: {output_path}")
-            
-        finally:
-            # Cleanup
-            if temp_md.exists():
-                temp_md.unlink()
+        with open(temp_md, 'w', encoding='utf-8') as f:
+            f.write(temp_content)
+        return temp_md
 
-    
+    def _cleanup_temp_markdown(self, temp_md: Path) -> None:
+        """Cleanup temporary markdown file"""
+        if temp_md.exists():
+            temp_md.unlink()
+
     def _setup_footers(self, doc: Document) -> None:
         """Configure footers with custom text and page numbers for odd and even pages"""
         for section in doc.sections:
@@ -706,37 +721,32 @@ def create_report_example():
             }
         )
         
-        # Chemin de travail absolu
         work_dir = "/Users/alain/Downloads"
         
-        # Vérification du répertoire des images
         img_dir = Path(work_dir) / "img"
         if not img_dir.exists():
-            print(f"Création du répertoire images: {img_dir}")
+            print(f"Created image directory: {img_dir}")
             img_dir.mkdir(parents=True)
         
-        # Vérification de l'image
         image_path = img_dir / "markdown.png"
         if image_path.exists():
-            print(f"Image trouvée: {image_path}")
-            print(f"Taille de l'image: {os.path.getsize(image_path)} bytes")
+            print(f"Image found: {image_path}")
+            print(f"Image size: {os.path.getsize(image_path)} bytes")
         else:
-            print(f"Image non trouvée: {image_path}")
+            print(f"Image not found: {image_path}")
         
-        # Création et utilisation du convertisseur
         converter = MarkdownToDocxConverter(config)
         
-        # Conversion avec messages de debug
-        print(f"Démarrage de la conversion...")
+        print(f"Starting conversion...")
         converter.convert(
             input_file="input.md",
             output_file="output3.docx",
             working_dir=work_dir
         )
-        print(f"Conversion terminée")
+        print(f"Conversion completed")
         
     except Exception as e:
-        print(f"Erreur lors de la conversion: {str(e)}")
+        print(f"Error during conversion: {str(e)}")
         import traceback
         print(traceback.format_exc())
 
